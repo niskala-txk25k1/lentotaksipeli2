@@ -28,11 +28,12 @@ def serialize_row(cur, row):
     return result
 
 
+
+
 app = Flask(__name__)
 
 @app.route('/<path:path>')
 def send_js(path):
-    print("Static file")
     return send_from_directory('www', path)
 
 
@@ -75,3 +76,4 @@ def handle_api_airport_query(airport_type):
 
 if __name__ == '__main__':
     app.run(use_reloader=True, host='127.0.0.1', port=3000)
+
