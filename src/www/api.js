@@ -1,0 +1,42 @@
+"use strict";
+
+class Airport {
+	constructor(json) {
+		this.json = json;
+
+		this.ident = json.ident;
+		this.icao  = json.ident;
+
+		this.gps = [json.latitude_deg, json.longitude_deg];
+	}
+}
+
+class Api {
+	constructor() {
+	}
+
+	async airports_by_type(type) {
+
+		const response = await fetch(`/api/airport/type/${type}`);
+		const results = await response.json();
+
+		const airports = [];
+		for (let airport_json of results) {
+			airports.push( new Airport(airport_json) );
+		}
+
+		return airports;
+	}
+
+	async airport_by_icao(icao) {
+
+		const response = await fetch(`/api/airport/ident/${icao}`);
+		const results = await response.json();
+
+		const airport = new Airport(results);
+
+		return airport;
+	}
+}
+
+const api = new Api();

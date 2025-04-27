@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+from flask import Flask, request, send_from_directory
+import mariadb
+
+import threading
+
+# MariaDB/MySQL connector is not thread safe, while flask requests are
+# threaded ???
+# TODO fix this the proper way
+mutex = threading.Lock()
+
+con = mariadb.connect(
+    host='127.0.0.1',
+    port=3306,
+    database='flight_game',
+    user='metropolia',
+    password='metropolia',
+    autocommit=True
+)
+
+# This function automatically creates an object from a row, automatically
+# determining the field names from the database columns.
+def serialize_row(cur, row):
+    result = {}
+    for i in range(0, len(cur.description)):
+        colname = cur.description[i][0]
+        result[colname] = row[i]
+    return result
+
+
+app = Flask(__name__)
+
+@app.route('/<path:path>')
+def send_js(path):
+    print("Static file")
+    return send_from_directory('www', path)
+
+
+@app.route('/api/airport/ident/<icao>')
+def handle(icao):
+    mutex.acquire()
+    cur = con.cursor()
+    query = "SELECT * FROM airport WHERE ident=%s"
+    cur.execute(query, (icao,))
+    row = cur.fetchone()
+    result = serialize_row(cur, row)
+    cur.close()
+    mutex.release()
+    return result
+
+
+
+@app.route('/api/airport/type/<airport_type>')
+def handle_api_airport_query(airport_type):
+    mutex.acquire()
+
+    # TODO: Filters, eq min/max GPS coordinates
+    #airport_type = request.args.get('type')
+
+    cur = con.cursor()
+    query = "SELECT * FROM airport WHERE type=%s"
+
+    cur.execute(query, (airport_type,))
+
+    results = []
+
+    for row in cur:
+        result = serialize_row(cur, row)
+        results.append(result)
+    cur.close()
+    mutex.release()
+    return results
+
+
+
+if __name__ == '__main__':
+    app.run(use_reloader=True, host='127.0.0.1', port=3000)
