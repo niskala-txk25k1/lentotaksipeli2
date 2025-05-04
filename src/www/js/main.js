@@ -1,6 +1,5 @@
 "use strict";
 
-
 function gps_to_usphere(gps_deg) {
 	const gps = [
 		util.radians(gps_deg[1]-90),
@@ -27,7 +26,7 @@ function compute_geodesic(gps_a, gps_b) {
 	const a = gps_to_usphere(gps_a);
 	const b = gps_to_usphere(gps_b);
 
-	const steps = 5;
+	const steps = 10;
 
 	for (let i = 0; i <= steps; i++) {
 		const t = i/steps;
@@ -55,26 +54,94 @@ class Map {
 		this.leaflet = L.map('map')
 		this.leaflet.setView([0,0], 4.0);
 
-		L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+		//let map_url = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png
+		let map_url = 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png'
+
+		L.tileLayer(map_url, {
 			noWrap: true,
 			maxZoom: 19,
-			attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+			attribution: '&copy; CARTO'
 		}).addTo(this.leaflet);
 
 		this.airports = [];
 
 		this.geodesic();
+		this.waypoints = [];
+		this.waypoint_lenghts = [];
+		this.distance = 0;
+		this.origin = null;
+		this.target = null;
+
+		this.animating = false;
+		this.anim_start = 0;
+		this.anim_speed = 700; // km per second
 
 		this.leaflet.on("moveend", this.event_move_end.bind(this));
+
+		this.panel = document.querySelector("#panel");
+
+		this.panel.addEventListener("click", this.animate.bind(this));
+	}
+
+	async animate() {
+		this.animating = true;
+
+		this.waypoint_lenghts = [];
+
+		for (let i = 1; i < this.waypoints.length; i++) {
+			this.waypoint_lenghts.push(util.gps_distance(this.waypoints[i-1], this.waypoints[i]))
+		}
+
+
+		console.log("anim");
+		requestAnimationFrame(this.animation_tick.bind(this));
+		this.anim_start = util.time();
+	}
+
+	async animation_tick() {
+		let now = util.time();
+		let delta = now - this.anim_start;
+		let progress = this.anim_speed * delta;
+
+		if (progress > this.distance) {
+			this.animating = false;
+			this.event_move_end();
+			return;
+		}
+
+		let i = 0;
+		for (; i < this.waypoints.length; i++) {
+			if ( progress < this.waypoint_lenghts[i] )
+				break;
+
+			progress -= this.waypoint_lenghts[i];
+		}
+
+		let t = progress / this.waypoint_lenghts[i];
+		let a = this.waypoints[i];
+		let b = this.waypoints[i+1];
+
+        let c = [
+            a[0] + t * (b[0] - a[0]),
+            a[1] + t * (b[1] - a[1]),
+        ];
+
+		this.leaflet.setView(c, undefined, {animate:false});
+
+		requestAnimationFrame(this.animation_tick.bind(this));
 	}
 
 	async event_move_end() {
-		this.airports_clear();
+		if (this.animating) return;
 
-		this.airports_show("large_airport");
+		this.airports_clear();
 
 		if (this.leaflet.getZoom() > 5) {
 			this.airports_show("medium_airport");
+		}
+
+		if (this.leaflet.getZoom() > 2) {
+			this.airports_show("large_airport");
 		}
 	}
 
@@ -94,18 +161,20 @@ class Map {
 			this.target = await api.airport_by_icao("KLGA");
 		}
 
-		console.log(this.origin.gps)
-		console.log(this.target.gps)
 
-		let wp = compute_geodesic(this.origin.gps, this.target.gps);
+		this.waypoints = compute_geodesic(this.origin.gps, this.target.gps);
 
 		if (this.line) {
 			this.leaflet.removeLayer(this.line);
 		}
 
-		this.line = new L.Polyline(wp, {color:"red"}).addTo(this.leaflet)
+		this.line = new L.Polyline(this.waypoints, {color:"red"}).addTo(this.leaflet)
 
 		this.leaflet.fitBounds( this.line.getBounds(), {padding:[50,50]} );
+
+
+		this.distance = util.gps_distance(this.origin.gps, this.target.gps)
+
 	}
 
 	get_bounds() {
