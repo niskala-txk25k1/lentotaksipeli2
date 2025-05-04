@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from flask import Flask, request, send_from_directory
 import mariadb
-
+import json
 import threading
 
 # MariaDB/MySQL connector is not thread safe, while flask requests are
@@ -56,12 +56,31 @@ def handle_api_airport_query(airport_type):
     mutex.acquire()
 
     # TODO: Filters, eq min/max GPS coordinates
-    #airport_type = request.args.get('type')
+    bounds = request.args.get('bounds')
+    print(bounds)
 
     cur = con.cursor()
-    query = "SELECT * FROM airport WHERE type=%s"
 
-    cur.execute(query, (airport_type,))
+    if bounds != None:
+        bounds_json = json.loads(bounds)
+        query = """
+            SELECT * FROM airport WHERE type=%s
+            AND longitude_deg > %s
+            AND longitude_deg < %s
+            AND latitude_deg > %s
+            AND latitude_deg < %s
+        """
+
+        print(bounds_json["min"]["lng"])
+        cur.execute(query, (airport_type,
+                            bounds_json["min"]["lng"],
+                            bounds_json["max"]["lng"],
+                            bounds_json["min"]["lat"],
+                            bounds_json["max"]["lat"],
+                            ))
+    else:
+        query = "SELECT * FROM airport WHERE type=%s"
+        cur.execute(query, (airport_type,))
 
     results = []
 

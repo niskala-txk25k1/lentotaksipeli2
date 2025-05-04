@@ -61,12 +61,22 @@ class Map {
 			attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 		}).addTo(this.leaflet);
 
-		this.markers = [];
+		this.airports = [];
 
-		this.populate();
 		this.geodesic();
+
+		this.leaflet.on("moveend", this.event_move_end.bind(this));
 	}
 
+	async event_move_end() {
+		this.airports_clear();
+
+		this.airports_show("large_airport");
+
+		if (this.leaflet.getZoom() > 5) {
+			this.airports_show("medium_airport");
+		}
+	}
 
 	async airport_onclick(icao) {
 		console.log(icao);
@@ -98,10 +108,27 @@ class Map {
 		this.leaflet.fitBounds( this.line.getBounds(), {padding:[50,50]} );
 	}
 
+	get_bounds() {
+		let lbounds = this.leaflet.getBounds();
+
+		let bounds = {
+			max: lbounds._northEast,
+			min: lbounds._southWest,
+		}
+
+		return bounds;
+	}
+
+	async airports_clear() {
+		for (let marker of this.airports) {
+			this.leaflet.removeLayer(marker);
+		}
+		this.airports = [];
+	}
 
 	// The airport markers
-	async populate() {
-		const airports = await api.airports_by_type("large_airport");
+	async airports_show(type) {
+		const airports = await api.airports_by_type(type, this.get_bounds());
 		console.log(airports);
 
 		for (const airport of airports) {
@@ -118,10 +145,10 @@ class Map {
 			marker.addTo(this.leaflet);
 			marker.on("click", this.airport_onclick.bind(this, airport.ident));
 
-			this.markers.push(marker);
+			this.airports.push(marker);
 		}
 	}
 }
 
 
-new Map();
+let _map = new Map();

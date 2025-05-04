@@ -15,9 +15,15 @@ class Api {
 	constructor() {
 	}
 
-	async airports_by_type(type) {
+	async airports_by_type(type, bounds=null) {
 
-		const response = await fetch(`/api/airport/type/${type}`);
+		let endpoint = `/api/airport/type/${type}`;
+
+		if (bounds) {
+			endpoint += `?bounds=${JSON.stringify(bounds)}`
+		}
+
+		const response = await fetch(endpoint);
 		const results = await response.json();
 
 		const airports = [];
