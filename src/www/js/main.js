@@ -67,6 +67,7 @@ function showQuestion(questionText, options) {
     });
 }
 
+
 class Map {
 	constructor() {
 
@@ -268,7 +269,7 @@ class Map {
 	// The airport markers
 	async airports_show(type) {
 		const airports = await api.airports_by_type(type, this.get_bounds());
-		console.log(airports);
+		//console.log(airports);
 
 		for (const airport of airports) {
 			const marker = L.marker(airport.gps, {
@@ -300,8 +301,8 @@ class Popup {
 		this.t = ""
 	}
 
-	async text(t) {
-		this.t += "<p>" + t + "</p>";
+	async text(t, bold = false) {
+		this.t += "<p style = font-weight:" + (bold ? "bold" : "normal") + ";>" + t + "</p>";
 	}
 
 	async button(label, callback) {
@@ -312,6 +313,56 @@ class Popup {
 		showQuestion(this.t, this.buttons);
 	}
 }
+
+class AirportInfoWindow {
+
+	async create()
+	{
+		if (document.querySelector("#airport_info")) return;
+		const airport_info = document.createElement("div");
+		airport_info.id = "airport_info";
+		airport_info.style.position = "absolute";
+		airport_info.style.top = "-220px";
+		airport_info.style.height = "230px";
+		airport_info.style.width = "100%";
+		airport_info.style.padding = "16px";
+		airport_info.style.boxSizing = "border-box";
+		airport_info.style.backgroundColor = "rgb(153 153 153)";
+		airport_info.style.borderRadius = "12px";
+		airport_info.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+		airport_info.style.fontSize = "17px";
+		airport_info.style.color = "#333";
+		airport_info.style.display = "none";
+		airport_info.style.overflowY = "auto";
+		airport_info.style.zIndex = "1000";
+		airport_info.style.left = "0px";
+		airport_info.style.borderBottomLeftRadius = "0px";
+		airport_info.style.borderBottomRightRadius = "0px";
+
+		document.querySelector("#panel").appendChild(airport_info);
+	}
+
+	async show()
+	{
+		if (!document.querySelector("#airport_info")) return;
+
+		document.querySelector("#airport_info").style.display = "block";
+	}
+	
+	async hide() 
+	{
+		if (!document.querySelector("#airport_info")) return;
+
+		document.querySelector("#airport_info").style.display = "none";
+	}
+
+	async text(t) 
+	{
+		if (!document.querySelector("#airport_info")) return;
+		document.querySelector("#airport_info").innerHTML = "<p>" + t + "</p>";
+	}
+}
+
 
 function hide_popup() {
     const panel = document.querySelector("#panel");
@@ -334,11 +385,14 @@ async function menu_arrived() {
 
 async function menu_confirm_flight(icao) {
 
+	const airport_data = await get_airport_by_icao(icao);
+	const airport_description = create_airport_description(airport_data);
+
 	show_popup();
 
 	let popup = new Popup();
 
-	popup.text(`Fly ${map.origin.icao} -> ${map.target.icao} ?`)
+	popup.text(`Fly ${map.origin.icao} -> ${map.target.icao} ?`, true)
 
 	map.disable_interaction();
 
@@ -349,6 +403,11 @@ async function menu_confirm_flight(icao) {
 	popup.button("Cancel", menu_at_airport)
 
 	popup.show()
+
+	const airport_info_window = new AirportInfoWindow();
+	airport_info_window.create();
+	airport_info_window.text(airport_description);
+	airport_info_window.show();
 }
 
 async function menu_map() {
