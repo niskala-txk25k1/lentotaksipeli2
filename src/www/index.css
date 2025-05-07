@@ -11,11 +11,14 @@ html, body {
 }
 
 #panel {
-	position: absolute;
-	bottom: 0;
-	left: 0;
-	width: 200px;
-	height: 200px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-right: -50%;
+    transform: translate(-50%, -50%);
+
+	width: 400px;
+	height: auto;
 	background: #FFF;
 	z-index: 1000;
 }

@@ -50,15 +50,20 @@ function showQuestion(questionText, options) {
     const panel = document.querySelector("#panel");
     panel.innerHTML = "";
 
-    const p = document.createElement("p");
-    p.textContent = questionText;
+    const p = document.createElement("div");
+    p.innerHTML = questionText;
     panel.appendChild(p);
 
     options.forEach(option => {
+		const div = document.createElement("div");
+
         const btn = document.createElement("button");
         btn.textContent = option.text;
         btn.addEventListener("click", option.callback);
-        panel.appendChild(btn);
+
+
+        div.appendChild(btn);
+        panel.appendChild(div);
     });
 }
 
@@ -237,30 +242,81 @@ let map;
 map = new Map();
 let game_id = -1;
 
-async function load_game(_game_id) {
-	game_id = _game_id;
+class Popup {
+	constructor() {
+		this.buttons = []
+		this.t = ""
+	}
+
+	async text(t) {
+		this.t += "<p>" + t + "</p>";
+	}
+
+	async button(label, callback) {
+		this.buttons.push({text:label, callback:callback})
+	}
+
+	async show() {
+		showQuestion(this.t, this.buttons);
+	}
+}
+
+async function menu_at_airport() {
 
 	let game = await api.get_game(game_id)
+	let airport = await api.airport_by_icao(game.airport)
 
 	console.log(game)
 
 
-	showQuestion(`At airport ${game.airport}`, [])
+	let popup = new Popup();
+
+
+    popup.text(`At airport ${airport.ident} - ${airport.name}` )
+    popup.text(`${airport.municipality} (${airport.continent} ${airport.iso_region})` )
+
+    popup.button("Map")
+    popup.button("Look for customers", menu_look_for_customers)
+
+	popup.show()
+
+
+	map.leaflet.setView(airport.gps);
+}
+
+async function menu_look_for_customers() {
+	let game = await api.get_game(game_id)
+
+	let popup = new Popup();
+
+	let customers = await api.get_customers( game_id )
+
+	popup.text( JSON.stringify(customers) )
+    popup.button("Return", menu_at_airport)
+	popup.show()
+}
+
+
+async function load_game(_game_id) {
+	game_id = _game_id;
+	menu_at_airport();
 }
 
 async function show_games() {
 
+	let popup = new Popup();
 
-	let opts = []
+	popup.text("Load game")
+
 	for (let game of await api.get_games()) {
 
-		opts.push( {text:`Game ${game.id}`, callback:()=>{ load_game(game.id) }} )
+		popup.button(`Game ${game.id}`, ()=>{ load_game(game.id) } )
 
 	}
 
-	opts.push( {text:`New Game`, callback:()=>{}} )
+	popup.button(`New game`, ()=>{} )
 
-	showQuestion("Load game:", opts)
+	popup.show();
 
 }
 

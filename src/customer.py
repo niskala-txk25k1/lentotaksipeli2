@@ -78,10 +78,11 @@ class Customer:
 
     # Discard the class after saving !!!
     # Saving always creates a NEW customer
-    def save(self):
+    def save(self, game_id):
         cur = self.db.con.cursor()
         query = """
             INSERT INTO customer (
+                game_id,
                 name,
                 origin,
                 destination,
@@ -91,10 +92,11 @@ class Customer:
                 accepted,
                 min_comfort,
                 min_rp
-            ) VALUES (?,?,?,?,?,?,?,?,?);
+            ) VALUES (?,?,?,?,?,?,?,?,?,?);
         """
         cur.execute(query,
             (
+                game_id,
                 self.name,
                 self.origin,
                 self.destination,

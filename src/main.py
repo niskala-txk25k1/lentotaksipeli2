@@ -3,6 +3,8 @@ from flask import Flask, request, send_from_directory
 import mariadb
 import json
 import threading
+import random
+from customer import Customer
 
 
 from database import Database
@@ -23,6 +25,49 @@ def serialize_row(cur, row):
         colname = cur.description[i][0]
         result[colname] = row[i]
     return result
+
+
+def game_get_airport(game_id):
+    cur = db.con.cursor()
+
+    query = "SELECT airport FROM game WHERE id=%s"
+    cur.execute(query, (game_id,))
+    row = cur.fetchone()
+    result = row[0]
+    cur.close()
+
+    return result
+
+
+def update_airport(game_id, icao):
+    airport_type = db.airport_type_icao(icao)
+
+    customers = db.customers_from_airport(game_id, icao)
+
+    if (len(customers) > 0):
+        return
+
+    # Make sure airport has at least N customers
+    customers_tier1 = random.randint(0,1)
+    customers_tier2 = 0
+    match airport_type:
+        case "medium_airport":
+            customers_tier1 = random.randint(1,3)
+            customers_tier2 = 0
+        case "large_airport":
+            customers_tier1 = random.randint(1,2)
+            customers_tier2 = random.randint(1,3)
+
+
+    for i in range(0, customers_tier1):
+        customer = Customer(db)
+        customer.generate_tier1(icao)
+        customer.save(game_id)
+
+    for i in range(0, customers_tier2):
+        customer = Customer(db)
+        customer.generate_tier2(icao)
+        customer.save(game_id)
 
 
 
@@ -65,9 +110,11 @@ def handle_api_games():
     mutex.release()
     return results
 
+
 @app.route('/api/game/<game_id>')
 def handle_api_game(game_id):
     mutex.acquire()
+
     cur = db.con.cursor()
 
     query = "SELECT * FROM game WHERE id=%s"
@@ -78,6 +125,30 @@ def handle_api_game(game_id):
     cur.close()
     mutex.release()
     return result
+
+
+
+@app.route('/api/game/<game_id>/customers')
+def handle_api_game_customers(game_id):
+    mutex.acquire()
+
+    update_airport(game_id, game_get_airport(game_id))
+
+    cur = db.con.cursor()
+
+    # TODO game id
+    query = f"SELECT * FROM customer INNER JOIN game WHERE origin = game.airport AND game.id = ? AND game.id = customer.game_id ORDER BY reward_rp DESC LIMIT 5"
+    cur.execute(query, (game_id,))
+
+    results = []
+    for row in cur:
+        result = serialize_row(cur, row)
+        results.append(result)
+
+
+    cur.close()
+    mutex.release()
+    return results
 
 
 @app.route('/api/airport/type/<airport_type>')

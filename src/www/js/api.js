@@ -4,6 +4,10 @@ class Airport {
 	constructor(json) {
 		this.json = json;
 
+		for (let key in json) {
+			this[key] = json[key]
+		}
+
 		this.ident = json.ident;
 		this.icao  = json.ident;
 
@@ -13,6 +17,7 @@ class Airport {
 
 class Api {
 	constructor() {
+
 	}
 
 	async airports_by_type(type, bounds=null) {
@@ -55,6 +60,15 @@ class Api {
 	async get_game(id) {
 
 		const response = await fetch(`/api/game/${id}`);
+		const results = await response.json();
+
+		return results;
+	}
+
+
+	async get_customers(game_id) {
+
+		const response = await fetch(`/api/game/${game_id}/customers`);
 		const results = await response.json();
 
 		return results;

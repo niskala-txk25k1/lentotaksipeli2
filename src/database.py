@@ -6,7 +6,7 @@ from geopy.distance import geodesic
 from customer import Customer
 
 # Change this value to cause database to reset
-SCHEMA_VERSION = "lentopeli2_v0.3"
+SCHEMA_VERSION = "lentopeli2_v0.4"
 
 class Database():
     def __init__(self):
@@ -49,30 +49,6 @@ class Database():
             );
         """)
 
-        cur.execute("DROP TABLE IF EXISTS customer;")
-        cur.execute("""
-            CREATE TABLE customer (
-                id          int     NOT NULL AUTO_INCREMENT,
-
-                name        VARCHAR(40) NOT NULL,
-
-                origin      varchar(40) NOT NULL,
-                destination varchar(40) NOT NULL,
-
-                deadline    int     NOT NULL,
-                reward      int     NOT NULL,
-                reward_rp   int     NOT NULL,
-                min_comfort int     NOT NULL,
-                min_rp      int     NOT NULL,
-                accepted    int     NOT NULL,
-
-                PRIMARY KEY (id),
-
-                FOREIGN KEY(origin)      REFERENCES airport(ident),
-                FOREIGN KEY(destination) REFERENCES airport(ident)
-
-            ) DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-        """)
 
         cur.execute("DROP TABLE IF EXISTS aircraft;")
         cur.execute("""
@@ -125,6 +101,33 @@ class Database():
             );
         """)
 
+
+        cur.execute("DROP TABLE IF EXISTS customer;")
+        cur.execute("""
+            CREATE TABLE customer (
+                id          int     NOT NULL AUTO_INCREMENT,
+                game_id     int     NOT NULL,
+
+                name        VARCHAR(40) NOT NULL,
+
+                origin      varchar(40) NOT NULL,
+                destination varchar(40) NOT NULL,
+
+                deadline    int     NOT NULL,
+                reward      int     NOT NULL,
+                reward_rp   int     NOT NULL,
+                min_comfort int     NOT NULL,
+                min_rp      int     NOT NULL,
+                accepted    int     NOT NULL,
+
+                PRIMARY KEY (id),
+
+                FOREIGN KEY(game_id)     REFERENCES game(id),
+                FOREIGN KEY(origin)      REFERENCES airport(ident),
+                FOREIGN KEY(destination) REFERENCES airport(ident)
+
+            ) DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+        """)
 
         cur.execute("""
             INSERT INTO game (id, airport, money,   rp, co2, aircraft) VALUES
@@ -297,10 +300,10 @@ class Database():
         return [coords[0],coords[1]]
 
 
-    def customers_from_airport(self, icao):
+    def customers_from_airport(self, game_id, icao):
         cur = self.con.cursor()
-        query = f"SELECT id FROM customer WHERE origin = ? ORDER BY reward_rp DESC LIMIT 5"
-        cur.execute(query, (icao,))
+        query = f"SELECT id FROM customer WHERE origin = ? AND game_id = ? ORDER BY reward_rp DESC LIMIT 5"
+        cur.execute(query, (icao, game_id))
         result = cur.fetchall()
 
         customers = []
