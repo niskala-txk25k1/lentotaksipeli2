@@ -144,6 +144,7 @@ class Map {
 		let delta = now - this.anim_start;
 		let progress = this.anim_speed * delta;
 
+
 		const airplane_sprite = new AirplaneSprite();
 		let scale = 1;
 
@@ -154,14 +155,15 @@ class Map {
 		} else if (progress > this.distance * 0.85) {
 			scale = 1 - ((progress - this.distance * 0.85) / (this.distance * 0.1));
 		}
-
-
+		
+		airplane_sound.set_volume(scale * 3);
 
 		if (progress > this.distance) {
 			this.animating = false;
 			airplane_sprite.hide();
 			this.event_move_end();
 			menu_arrived();
+			airplane_sound.stop();
 			return;
 		}
 
@@ -382,6 +384,31 @@ class AirportInfoWindow {
 	}
 }
 
+class AirplaneSound
+{
+	constructor() {
+		this.audio = new Audio("/audio/airplane.mp3");
+		this.audio.loop = true;
+		this.audio.volume = 0.1;
+		this.running = false;
+	}
+
+	async start() {
+		if (this.running) return;
+		this.audio.play();
+	}
+
+	async stop() {
+		if (!this.running) return;
+		this.audio.pause();
+	}
+
+	async set_volume(volume) {
+		this.audio.volume = volume / 100;
+	}
+}
+const airplane_sound = new AirplaneSound(); //init globally, yolo
+
 class AirplaneSprite
 {
 	async size_scale(percent)
@@ -450,6 +477,7 @@ async function menu_confirm_flight(icao) {
 		hide_popup();
 		const airplane_sprite = new AirplaneSprite();
 		airplane_sprite.show();
+		airplane_sound.start();
 		map.animate()
 	});
 	popup.button("Cancel", menu_at_airport)
