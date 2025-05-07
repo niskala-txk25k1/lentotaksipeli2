@@ -134,7 +134,6 @@ class Map {
 			this.waypoint_lenghts.push(util.gps_distance(this.waypoints[i-1], this.waypoints[i]))
 		}
 
-
 		console.log("anim");
 		requestAnimationFrame(this.animation_tick.bind(this));
 		this.anim_start = util.time();
@@ -145,8 +144,22 @@ class Map {
 		let delta = now - this.anim_start;
 		let progress = this.anim_speed * delta;
 
+		const airplane_sprite = new AirplaneSprite();
+		let scale = 1;
+
+		if (progress < this.distance * 0.1) {
+			scale = (progress) / (this.distance * 0.1);
+		} else if (progress > this.distance * 0.95) {
+			scale = 0;
+		} else if (progress > this.distance * 0.85) {
+			scale = 1 - ((progress - this.distance * 0.85) / (this.distance * 0.1));
+		}
+
+
+
 		if (progress > this.distance) {
 			this.animating = false;
+			airplane_sprite.hide();
 			this.event_move_end();
 			menu_arrived();
 			return;
@@ -171,6 +184,12 @@ class Map {
 
 		this.leaflet.setView(c, undefined, {animate:false});
 
+		let current_waypoint = this.waypoints[i];
+		let next_waypoint = this.waypoints[i+1];
+		let angle = Math.atan2(next_waypoint[0] - current_waypoint[0], next_waypoint[1] - current_waypoint[1]);
+		let degrees = util.degrees(-angle) + 90;
+
+		airplane_sprite.modify_transform("rotate(" + degrees + "deg) scale(" + scale + ")");
 		requestAnimationFrame(this.animation_tick.bind(this));
 	}
 
@@ -363,6 +382,37 @@ class AirportInfoWindow {
 	}
 }
 
+class AirplaneSprite
+{
+	async size_scale(percent)
+	{
+		const sprite = document.querySelector("#airplane_sprite");
+		const scale = percent
+		sprite.style.transform = "scale(" + scale + ")";
+	}
+	async show()
+	{
+		const sprite = document.querySelector("#airplane_sprite");
+		sprite.style.display = "block";
+	}
+	async hide()
+	{
+		const sprite = document.querySelector("#airplane_sprite");
+		sprite.style.display = "none";
+	}
+
+	async set_rotation(degrees)
+	{
+		const sprite = document.querySelector("#airplane_sprite");
+		sprite.style.transform = "rotate(" + degrees + "deg)";
+	}
+
+	async modify_transform(data) {
+		const sprite = document.querySelector("#airplane_sprite");
+		sprite.style.transform = "translate(-50%, -50%)" + data;
+	}
+}
+
 
 function hide_popup() {
     const panel = document.querySelector("#panel");
@@ -398,6 +448,8 @@ async function menu_confirm_flight(icao) {
 
 	popup.button("Confirm", ()=>{
 		hide_popup();
+		const airplane_sprite = new AirplaneSprite();
+		airplane_sprite.show();
 		map.animate()
 	});
 	popup.button("Cancel", menu_at_airport)
