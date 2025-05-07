@@ -337,31 +337,15 @@ class Popup {
 
 class AirportInfoWindow {
 
-	async create()
-	{
+	async create() {
 		if (document.querySelector("#airport_info")) return;
+	  
 		const airport_info = document.createElement("div");
-		airport_info.id = "airport_info";
-		airport_info.style.position = "absolute";
-		airport_info.style.top = "-220px";
-		airport_info.style.height = "230px";
-		airport_info.style.width = "100%";
-		airport_info.style.padding = "16px";
-		airport_info.style.boxSizing = "border-box";
-		airport_info.style.backgroundColor = "rgb(153 153 153)";
-		airport_info.style.borderRadius = "12px";
-		airport_info.style.fontFamily = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
-		airport_info.style.fontSize = "17px";
-		airport_info.style.color = "#333";
-		airport_info.style.display = "none";
-		airport_info.style.overflowY = "auto";
-		airport_info.style.zIndex = "1000";
-		airport_info.style.left = "0px";
-		airport_info.style.borderBottomLeftRadius = "0px";
-		airport_info.style.borderBottomRightRadius = "0px";
-
+		airport_info.id = "airport_info";  // Tämä ottaa tyylit suoraan CSS:stä
+	  
 		document.querySelector("#panel").appendChild(airport_info);
-	}
+	  }
+	  
 
 	async show()
 	{
@@ -545,22 +529,18 @@ async function load_game(_game_id) {
 
 async function show_games() {
 
-	map.disable_interaction();
+    map.disable_interaction();
 
-	let popup = new Popup();
+    let popup = new Popup();
 
-	popup.text("Load game")
+    popup.text('<span class="load-game-text">LOAD GAME</span>') // Lisätään luokka
+    for (let game of await api.get_games()) {
+        popup.button(`Game ${game.id}`, ()=>{ load_game(game.id) })
+    }
 
-	for (let game of await api.get_games()) {
+    popup.button(`New game`, ()=>{} )
 
-		popup.button(`Game ${game.id}`, ()=>{ load_game(game.id) } )
-
-	}
-
-	popup.button(`New game`, ()=>{} )
-
-	popup.show();
-
+    popup.show();
 }
 
 show_games();

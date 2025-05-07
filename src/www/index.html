@@ -4,19 +4,23 @@
     <meta charset="UTF-8">
     <title>Lentotaksipeli II</title>
 
-	<link rel="stylesheet" href="/leaflet/leaflet.css" />
-	<link rel="stylesheet" href="index.css" />
-	<script src="/leaflet/leaflet.js"></script>
-	<script src="js/vec3.js"></script>
-	<script src="js/api.js"></script>
-	<script src="js/airport_db_api.js"></script>
-	<script src="js/main.js" defer></script>
+    <link rel="stylesheet" href="/leaflet/leaflet.css" />
+    <link rel="stylesheet" href="index.css" />
+    <script src="/leaflet/leaflet.js"></script>
+    <script src="js/vec3.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/airport_db_api.js"></script>
+    <script src="js/main.js" defer></script>
 </head>
 <body>
 
 <div id="map"></div>
 
 <div id="panel">
+    <p class="panel-title">Load game</p>
+    <button onclick="loadGame(1)">Game 1</button>
+    <button onclick="loadGame(2)">Game 2</button>
+    <button onclick="startNewGame()">New game</button>
 </div>
 
 <!--This is created on page load, and becomes visible whenever needed-->
