@@ -6,5 +6,6 @@ python3 -m venv ./venv/
 
 pip3 install -r ./requirements.txt
 
+mariadb -u metropolia --password=metropolia flight_game < ./data/reset.sql
 mariadb -u metropolia --password=metropolia flight_game < ./data/lp.sql
 

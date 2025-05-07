@@ -16,6 +16,7 @@ echo Installing dependencies
 echo Loading lp.sql
 @echo on
 
+"C:\Program Files\MariaDB 11.7\bin\mariadb.exe" -u metropolia --password=metropolia flight_game < ./data/reset.sql
 "C:\Program Files\MariaDB 11.7\bin\mariadb.exe" -u metropolia --password=metropolia flight_game < ./data/lp.sql
 
 @echo off

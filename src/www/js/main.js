@@ -84,6 +84,8 @@ class Map {
 
 		this.airports = [];
 
+		this.show_airports = true;
+		this.interaction = true
 		this.geodesic();
 		this.waypoints = [];
 		this.waypoint_lenghts = [];
@@ -99,10 +101,30 @@ class Map {
 
 		this.panel = document.querySelector("#panel");
 
+		this.origin_marker = null;
+
 		//this.panel.addEventListener("click", this.animate.bind(this));
 	}
 
+
+	async set_origin(icao) {
+
+		if (this.origin_marker) {
+			this.leaflet.removeLayer(this.origin_marker);
+		}
+
+		this.origin = await api.airport_by_icao(icao);
+
+		this.origin_marker = L.marker(this.origin.gps)
+		this.origin_marker.addTo(this.leaflet);
+
+	}
+
+
 	async animate() {
+		this.leaflet.removeLayer(this.origin_marker)
+		this.origin_marker = null;
+
 		this.animating = true;
 
 		this.waypoint_lenghts = [];
@@ -125,6 +147,7 @@ class Map {
 		if (progress > this.distance) {
 			this.animating = false;
 			this.event_move_end();
+			menu_arrived();
 			return;
 		}
 
@@ -151,7 +174,7 @@ class Map {
 	}
 
 	async event_move_end() {
-		if (this.animating) return;
+		if (this.animating || !this.show_airports) return;
 
 		this.airports_clear();
 
@@ -165,17 +188,46 @@ class Map {
 	}
 
 	async airport_onclick(icao) {
+		if (!this.interaction) return;
 		console.log(icao);
 
 		//this.origin = this.target;
 		this.target = await api.airport_by_icao(icao);
 		await this.geodesic();
+
+		menu_confirm_flight(icao)
 	}
 
+	async clear_geodesic() {
+		this.waypoints = [];
+		this.leaflet.removeLayer(this.line);
+	}
+
+	async disable_airports() {
+		this.show_airports = false;
+		this.airports_clear();
+	}
+	async enable_airports() {
+		this.show_airports = true;
+		this.event_move_end();
+	}
+
+	async disable_interaction() {
+		this.interaction = false;
+		this.leaflet._handlers.forEach(function(handler) {
+			handler.disable();
+		});
+	}
+	async enable_interaction() {
+		this.interaction = true;
+		this.leaflet._handlers.forEach(function(handler) {
+			handler.enable();
+		});
+	}
 
 	async geodesic() {
 		if (!this.origin) {
-			this.origin = await api.airport_by_icao("EFHK");
+			await this.set_origin("EFHK");
 			this.target = await api.airport_by_icao("KLGA");
 		}
 
@@ -261,10 +313,60 @@ class Popup {
 	}
 }
 
+function hide_popup() {
+    const panel = document.querySelector("#panel");
+	panel.style.display = "none";
+}
+
+function show_popup() {
+    const panel = document.querySelector("#panel");
+	panel.style.display = "block";
+}
+
+
+async function menu_arrived() {
+	await api.set_airport(game_id, map.target.icao);
+	map.origin = map.target;
+	await menu_at_airport()
+
+	show_popup();
+}
+
+async function menu_confirm_flight(icao) {
+
+	show_popup();
+
+	let popup = new Popup();
+
+	popup.text(`Fly ${map.origin.icao} -> ${map.target.icao} ?`)
+
+	map.disable_interaction();
+
+	popup.button("Confirm", ()=>{
+		hide_popup();
+		map.animate()
+	});
+	popup.button("Cancel", menu_at_airport)
+
+	popup.show()
+}
+
+async function menu_map() {
+	hide_popup();
+
+	map.enable_airports();
+	map.enable_interaction();
+}
+
 async function menu_at_airport() {
 
 	let game = await api.get_game(game_id)
 	let airport = await api.airport_by_icao(game.airport)
+
+	await map.set_origin(game.airport);
+
+	map.clear_geodesic()
+	map.disable_airports();
 
 	console.log(game)
 
@@ -275,7 +377,7 @@ async function menu_at_airport() {
     popup.text(`At airport ${airport.ident} - ${airport.name}` )
     popup.text(`${airport.municipality} (${airport.continent} ${airport.iso_region})` )
 
-    popup.button("Map")
+    popup.button("Map", menu_map)
     popup.button("Look for customers", menu_look_for_customers)
 
 	popup.show()
@@ -303,6 +405,8 @@ async function load_game(_game_id) {
 }
 
 async function show_games() {
+
+	map.disable_interaction();
 
 	let popup = new Popup();
 

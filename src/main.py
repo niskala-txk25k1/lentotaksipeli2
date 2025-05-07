@@ -127,6 +127,18 @@ def handle_api_game(game_id):
     return result
 
 
+@app.route('/api/game/<game_id>/set_airport/<icao>')
+def handle_api_set_airport(game_id, icao):
+    mutex.acquire()
+
+    cur = db.con.cursor()
+
+    query = "UPDATE game SET airport = ? WHERE id=?"
+    cur.execute(query, (icao, game_id))
+    cur.close()
+    mutex.release()
+    return "ok"
+
 
 @app.route('/api/game/<game_id>/customers')
 def handle_api_game_customers(game_id):

@@ -73,6 +73,13 @@ class Api {
 
 		return results;
 	}
+
+
+	async set_airport(game_id, icao) {
+
+		const response = await fetch(`/api/game/${game_id}/set_airport/${icao}`);
+		return;
+	}
 }
 
 const api = new Api();
