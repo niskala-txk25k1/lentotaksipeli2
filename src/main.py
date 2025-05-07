@@ -4,19 +4,16 @@ import mariadb
 import json
 import threading
 
+
+from database import Database
+
 # MariaDB/MySQL connector is not thread safe, while flask requests are
 # threaded ???
 # TODO fix this the proper way
 mutex = threading.Lock()
 
-con = mariadb.connect(
-    host='127.0.0.1',
-    port=3306,
-    database='flight_game',
-    user='metropolia',
-    password='metropolia',
-    autocommit=True
-)
+db = Database();
+
 
 # This function automatically creates an object from a row, automatically
 # determining the field names from the database columns.
@@ -40,7 +37,7 @@ def send_js(path):
 @app.route('/api/airport/ident/<icao>')
 def handle(icao):
     mutex.acquire()
-    cur = con.cursor()
+    cur = db.con.cursor()
     query = "SELECT * FROM airport WHERE ident=%s"
     cur.execute(query, (icao,))
     row = cur.fetchone()
@@ -49,6 +46,24 @@ def handle(icao):
     mutex.release()
     return result
 
+
+@app.route('/api/games')
+def handle_api_games():
+    mutex.acquire()
+
+    cur = db.con.cursor()
+    query = "SELECT * FROM game"
+    cur.execute(query)
+
+    results = []
+    for row in cur:
+        result = serialize_row(cur, row)
+        results.append(result)
+
+    cur.close()
+
+    mutex.release()
+    return results
 
 
 @app.route('/api/airport/type/<airport_type>')
@@ -59,7 +74,7 @@ def handle_api_airport_query(airport_type):
     bounds = request.args.get('bounds')
     print(bounds)
 
-    cur = con.cursor()
+    cur = db.con.cursor()
 
     if bounds != None:
         bounds_json = json.loads(bounds)

@@ -94,7 +94,7 @@ class Map {
 
 		this.panel = document.querySelector("#panel");
 
-		this.panel.addEventListener("click", this.animate.bind(this));
+		//this.panel.addEventListener("click", this.animate.bind(this));
 	}
 
 	async animate() {
@@ -162,9 +162,8 @@ class Map {
 	async airport_onclick(icao) {
 		console.log(icao);
 
-		this.origin = this.target;
+		//this.origin = this.target;
 		this.target = await api.airport_by_icao(icao);
-		console.log(this.target)
 		await this.geodesic();
 	}
 
@@ -234,4 +233,20 @@ class Map {
 }
 
 
-let _map = new Map();
+let map;
+
+async function main() {
+
+	map = new Map();
+
+	let opts = []
+	for (let game of await api.get_games()) {
+
+		opts.push( {text:`Game ${game.id}`, callback:()=>{ /*Load game*/ }} )
+
+	}
+
+	showQuestion("Load game:", opts)
+
+}
+main();

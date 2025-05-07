@@ -43,6 +43,14 @@ class Api {
 
 		return airport;
 	}
+
+	async get_games() {
+
+		const response = await fetch(`/api/games`);
+		const results = await response.json();
+
+		return results;
+	}
 }
 
 const api = new Api();
