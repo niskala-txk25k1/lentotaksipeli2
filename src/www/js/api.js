@@ -51,6 +51,14 @@ class Api {
 
 		return results;
 	}
+
+	async get_game(id) {
+
+		const response = await fetch(`/api/game/${id}`);
+		const results = await response.json();
+
+		return results;
+	}
 }
 
 const api = new Api();

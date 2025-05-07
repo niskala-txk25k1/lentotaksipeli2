@@ -234,19 +234,34 @@ class Map {
 
 
 let map;
+map = new Map();
+let game_id = -1;
 
-async function main() {
+async function load_game(_game_id) {
+	game_id = _game_id;
 
-	map = new Map();
+	let game = await api.get_game(game_id)
+
+	console.log(game)
+
+
+	showQuestion(`At airport ${game.airport}`, [])
+}
+
+async function show_games() {
+
 
 	let opts = []
 	for (let game of await api.get_games()) {
 
-		opts.push( {text:`Game ${game.id}`, callback:()=>{ /*Load game*/ }} )
+		opts.push( {text:`Game ${game.id}`, callback:()=>{ load_game(game.id) }} )
 
 	}
+
+	opts.push( {text:`New Game`, callback:()=>{}} )
 
 	showQuestion("Load game:", opts)
 
 }
-main();
+
+show_games();

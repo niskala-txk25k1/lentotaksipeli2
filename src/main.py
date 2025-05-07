@@ -65,6 +65,20 @@ def handle_api_games():
     mutex.release()
     return results
 
+@app.route('/api/game/<game_id>')
+def handle_api_game(game_id):
+    mutex.acquire()
+    cur = db.con.cursor()
+
+    query = "SELECT * FROM game WHERE id=%s"
+    cur.execute(query, (game_id,))
+    row = cur.fetchone()
+    result = serialize_row(cur, row)
+
+    cur.close()
+    mutex.release()
+    return result
+
 
 @app.route('/api/airport/type/<airport_type>')
 def handle_api_airport_query(airport_type):
