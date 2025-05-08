@@ -59,7 +59,7 @@ html, body {
     box-sizing: border-box;
   }
 
-  .progress-bar-fill {
+.progress-bar-fill {
     display: block;
     height: 100%;
     background-color: #3367d6;
@@ -67,6 +67,43 @@ html, body {
     transition: width 500ms ease-in-out;
   }
 
+  #aircraft {
+    font-size: 20px;
+    font-weight: bold;
+    color: #FFF;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 10px;
+    background-color: rgba(0, 51, 102, 0.8);
+    border-radius: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    height: 15px;
+}
+
+#range, #co2, #rp {
+    font-size: 14px;
+    font-weight: bold;
+    color: #000000;
+    margin: 2px 0;
+}
+
+#money {
+    font-size: 18px;
+    font-weight: bold;
+    color: #000000;
+    text-align: center;
+    width: 100%;
+    margin-top: 10px;
+}
+
+#status div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+}
 
 
 #panel {
