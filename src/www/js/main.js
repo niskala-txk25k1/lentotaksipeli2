@@ -599,8 +599,34 @@ async function menu_upgrades() {
 	popup.show()
 }
 
+async function menu_select_aircraft(aircraft_id) {
+	let ret = await api.select_aircraft(game_id, aircraft_id);
+	if (!ret.success) {
+		let popup = new Popup();
+		popup.text(ret.message)
+		popup.button("Return", menu_at_airport)
+		popup.show()
+		return;
+	}
+	menu_at_airport();
+}
+
 async function menu_aircraft() {
 
+	let aircrafts = await api.get_all_aircraft(game_id);
+	console.log(aircrafts)
+	let popup = new Popup();
+
+	for (let aircraft of aircrafts) {
+		let t = `${aircraft.name}`;
+		if (!aircraft.owned) {
+			t += ` (\$${aircraft.price})`
+		}
+		console.log(aircraft)
+		popup.button(t, ()=>{menu_select_aircraft(aircraft.id)})
+	}
+	popup.button(`Return`, menu_at_airport)
+	popup.show()
 }
 
 async function menu_at_airport() {
@@ -645,7 +671,7 @@ async function menu_at_airport() {
 		popup.button("Hangar", async ()=>{
 			let popup = new Popup();
 			popup.button("Upgrades",  menu_upgrades)
-			popup.button("Aircrafts", menu_aircraft)
+			popup.button("Aircraft", menu_aircraft)
 			popup.button("Return", menu_at_airport)
 			popup.show();
 		});

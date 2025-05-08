@@ -165,9 +165,9 @@ class Database():
 
         cur.execute("""
         INSERT INTO aircraft (game_id, name, category, comfort, capacity, speed_kmh, range_km, fuel, fuel_max, fuel_consumption_lph, co2_emissions_kgph, price, owned, upgrade_comfort, upgrade_efficiency) VALUES
-        (?, 'Cessna 208 Caravan', 'Small', 1,  9,   340, 1700,  1300,   1300,   220,   20000,     0,   1, 0, 0),
-        (?, 'Learjet 75',         'Medium',3,  12,  860, 3700,  6000,   6000,   700,   20000,   0,   0, 0, 0),
-        (?, 'Boeing 747-8',       'Large', 5,  400, 920, 14000, 240000, 240000, 12000, 1000000, 0, 0, 0, 0)
+        (?, 'Cessna 208 Caravan', 'Small', 1,  9,   340, 1700,  1300,   1300,   220,   560,     0,   1, 0, 0),
+        (?, 'Learjet 75',         'Medium',3,  12,  860, 3700,  6000,   6000,   700,   1900,   100000,   0, 0, 0),
+        (?, 'Boeing 747-8',       'Large', 5,  400, 920, 14000, 240000, 240000, 12000, 30000, 1000000, 0, 0, 0)
         """, (game_id,game_id,game_id))
 
         cur.execute("SELECT aircraft.id FROM aircraft WHERE game_id=? AND owned=1 LIMIT 1", (game_id,))

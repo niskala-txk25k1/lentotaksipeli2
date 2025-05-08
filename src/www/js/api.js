@@ -90,6 +90,14 @@ class Api {
 		return results;
 	}
 
+	async get_all_aircraft(game_id) {
+
+		const response = await fetch(`/api/game/${game_id}/all_aircraft`);
+		const results = await response.json();
+
+		return results;
+	}
+
 	async get_facilities(game_id, icao) {
 
 		const response = await fetch(`/api/game/${game_id}/airport/${icao}/facilities`);
@@ -143,6 +151,11 @@ class Api {
 
 	async upgrade_efficiency(game_id) {
 		const response = await fetch(`/api/game/${game_id}/upgrade_efficiency`);
+		return response.json();
+	}
+
+	async select_aircraft(game_id, aircraft_id) {
+		const response = await fetch(`/api/game/${game_id}/select_aircraft/${aircraft_id}`);
 		return response.json();
 	}
 }

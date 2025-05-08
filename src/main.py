@@ -141,6 +141,26 @@ def handle_api_games():
     mutex.release()
     return results
 
+
+
+@app.route('/api/game/<game_id>/all_aircraft')
+def handle_api_game_all_aircraft(game_id):
+    mutex.acquire()
+
+    cur = db.con.cursor()
+    query = "SELECT * FROM aircraft WHERE game_id = ?"
+    cur.execute(query, (game_id,))
+
+    results = []
+    for row in cur:
+        result = serialize_row(cur, row)
+        results.append(result)
+
+    cur.close()
+
+    mutex.release()
+    return results
+
 @app.route('/api/game/new')
 def handle_api_game_new():
     mutex.acquire()
@@ -271,14 +291,12 @@ def handle_api_refuel(game_id):
     mutex.acquire()
     cur = db.con.cursor()
 
-
     aircraft = query_current_aircraft(game_id)
 
     refuel_price = (aircraft["fuel_max"] - aircraft["fuel"]) * 1.1
 
     query = "UPDATE aircraft, game SET aircraft.fuel = aircraft.fuel_max WHERE game.id = ? AND aircraft.id = game.aircraft"
     cur.execute(query, (game_id,))
-
 
     query = "UPDATE game SET game.money = game.money - ? WHERE game.id = ?;"
     cur.execute(query, (refuel_price, game_id,))
@@ -331,6 +349,30 @@ def handle_api_flyto_airport(game_id, icao):
     return {"success": True, "message": ""}
 
 
+
+@app.route('/api/game/<game_id>/select_aircraft/<aircraft_id>')
+def handle_api_select_aircraft(game_id, aircraft_id):
+    mutex.acquire()
+
+    game = gamestate(game_id)
+
+    cur = db.con.cursor()
+
+
+    cur.execute("SELECT price, owned FROM aircraft WHERE id = ?", (aircraft_id,))
+    cost, owned = cur.fetchone()
+
+    if not owned and game["money"] < cost:
+        mutex.release()
+        return {"success": False, "message": "Insufficient funds"}
+
+
+    cur.execute("UPDATE game SET money = money - ? WHERE id = ?", (cost, game_id,))
+    cur.execute("UPDATE aircraft SET owned = 1 WHERE id = ?", (aircraft_id,))
+    cur.execute("UPDATE game SET aircraft = ? WHERE id = ?", (aircraft_id, game_id,))
+
+    mutex.release()
+    return {"success": True, "message": ""}
 
 
 @app.route('/api/game/<game_id>/upgrade_comfort')
