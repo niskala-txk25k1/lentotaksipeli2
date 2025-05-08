@@ -153,12 +153,13 @@ class Map {
 		let scale = 1;
 
 		if (progress < this.distance * 0.1) {
-			scale = (progress) / (this.distance * 0.1);
-		} else if (progress > this.distance * 0.95) {
-			scale = 0;
-		} else if (progress > this.distance * 0.85) {
-			scale = 1 - ((progress - this.distance * 0.85) / (this.distance * 0.1));
+			scale = progress / (this.distance * 0.1); // takeoff
+		} else if (progress > this.distance * 0.9) {
+			scale = 1 - ((progress - this.distance * 0.9) / (this.distance * 0.1)); // landing
+		} else {
+			scale = 1; // cruising
 		}
+		
 		
 		airplane_sound.set_volume(scale * 3);
 
@@ -417,6 +418,11 @@ class AirplaneSound
 	}
 
 	async set_volume(volume) {
+
+		if (volume < 0) volume = 0;
+		if (volume > 100) volume = 100;
+		
+
 		this.audio.volume = volume / 100;
 	}
 }
