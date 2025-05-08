@@ -41,7 +41,7 @@ class Customer:
         cur = self.db.con.cursor()
 
         country = self.db.airport_country_icao(origin_icao)
-        query = f"SELECT ident FROM airport WHERE type IN ('small_airport', 'medium_airport') AND iso_country = ? AND ident != ? ORDER BY RAND() LIMIT 1"
+        query = f"SELECT ident FROM airport WHERE type IN ('medium_airport') AND iso_country = ? AND ident != ? ORDER BY RAND() LIMIT 1"
         cur.execute(query, (country, origin_icao,))
         result = cur.fetchone()
         self.destination = result[0]

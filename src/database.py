@@ -28,7 +28,7 @@ class Database():
             self.reset()
 
         # reset anyway
-        self.reset()
+        #self.reset()
 
 
 

@@ -265,10 +265,12 @@ class Map {
 			zIndexOffset: 1000
 		});
 
-		marker.addTo(this.leaflet);
+		if (index > 0) {
+			marker.addTo(this.leaflet);
+			this.customer_markers.push(marker)
+		}
 
 		this.customer_markers.push(line)
-		this.customer_markers.push(marker)
 	}
 
 	async clear_customers() {
@@ -532,9 +534,19 @@ async function menu_confirm_flight(icao) {
 async function menu_map() {
 	hide_popup();
 
+	let customers = await api.get_passengers( game_id )
+
+	for (let i = 0; i < customers.length; i++) {
+		const customer = customers[i];
+
+		map.add_customer(customer, -1)
+
+	}
+
 	map.enable_airports();
 	map.enable_interaction();
 }
+
 
 async function menu_at_airport() {
 
@@ -550,10 +562,18 @@ async function menu_at_airport() {
 	map.disable_interaction()
 	map.clear_customers()
 
-	console.log(game)
-
 
 	let popup = new Popup();
+
+	let contract = await api.try_contracts(game_id);
+	if (contract.success) {
+		popup.text(contract.message)
+		popup.button("Okay", menu_at_airport)
+		popup.show()
+		return;
+	}
+
+
 
 
     popup.text(`At airport ${airport.ident} - ${airport.name}` )
@@ -562,6 +582,7 @@ async function menu_at_airport() {
     popup.button("Map", menu_map)
     popup.button("Look for customers", menu_look_for_customers)
 
+    popup.button("Your passengers", menu_passengers)
 
     popup.button("Refuel", async ()=>{
 		await api.refuel(game_id)
@@ -678,6 +699,43 @@ async function menu_look_for_customers() {
     popup.button("Return", menu_at_airport)
 	popup.show()
 }
+
+async function menu_passengers() {
+
+	let popup = new Popup();
+
+	let customers = await api.get_passengers( game_id )
+
+	if (customers.length == 0) {
+		popup.text("You have no passengers.")
+		popup.button("Return", menu_at_airport);
+		popup.show();
+		return;
+	}
+
+	for (let i = 0; i < customers.length; i++) {
+		const customer = customers[i];
+
+		let t = "";
+		t += `#${i+1} ${customer.name} ${roman[customer.min_comfort-1]}<br>`
+		t += `${customer.destination}<br>`
+		t += `\$${customer.reward} +${customer.reward_rp}rp<br>`
+
+		//popup.text(t)
+		//popup.button( `Accept #${i+1}` )
+		popup.button(t, ()=>{})
+
+		map.add_customer(customer, i+1)
+
+	}
+
+	map.enable_interaction()
+	uncenter_popup()
+    popup.button("Return", menu_at_airport)
+	popup.show()
+}
+
+
 
 
 async function load_game(_game_id) {

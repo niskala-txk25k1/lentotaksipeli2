@@ -310,6 +310,40 @@ def handle_api_flyto_airport(game_id, icao):
     return {"success": True, "message": ""}
 
 
+
+@app.route('/api/game/<game_id>/try_contracts')
+def handle_api_game_try_contracts(game_id):
+    mutex.acquire()
+    cur = db.con.cursor()
+
+    query = """
+        SELECT customer.id FROM customer, game WHERE
+        game.id=? AND
+        customer.game_id = game.id AND
+        customer.destination = game.airport AND
+        customer.accepted = 1
+        LIMIT 1
+    """
+    cur.execute(query, (game_id,))
+    row = cur.fetchone()
+
+    if row == None:
+        cur.close()
+        mutex.release()
+        return {"success": False, "message": ""}
+
+    customer = db.customer_by_id(row[0])
+
+    cur.execute("UPDATE game SET game.money = game.money + ?, game.rp = game.rp + ? WHERE game.id = ?",
+        (customer.reward, customer.reward_rp, game_id)
+    )
+    customer.drop()
+    text = f"You have completed {customer.name}'s flight.<br>+${customer.reward}, +{customer.reward_rp} rp"
+    cur.close()
+    mutex.release()
+    return {"success": True, "message": text}
+
+
 @app.route('/api/game/<game_id>/customers')
 def handle_api_game_customers(game_id):
     mutex.acquire()
@@ -319,7 +353,29 @@ def handle_api_game_customers(game_id):
     cur = db.con.cursor()
 
     # TODO game id
-    query = f"SELECT customer.* FROM customer INNER JOIN game WHERE origin = game.airport AND game.id = ? AND game.id = customer.game_id ORDER BY reward_rp DESC LIMIT 5"
+    query = f"SELECT customer.* FROM customer INNER JOIN game WHERE origin = game.airport AND game.id = ? AND game.id = customer.game_id AND customer.accepted = 0 ORDER BY reward_rp DESC LIMIT 5"
+    cur.execute(query, (game_id,))
+
+    results = []
+    for row in cur:
+        result = serialize_row(cur, row)
+        results.append(result)
+
+    cur.close()
+    mutex.release()
+    return results
+
+
+@app.route('/api/game/<game_id>/passengers')
+def handle_api_game_passengers(game_id):
+    mutex.acquire()
+
+    update_airport(game_id, game_get_airport(game_id))
+
+    cur = db.con.cursor()
+
+    # TODO game id
+    query = f"SELECT * FROM customer, game WHERE game.id = ? AND game.id = customer.game_id AND customer.accepted = 1"
     cur.execute(query, (game_id,))
 
     results = []

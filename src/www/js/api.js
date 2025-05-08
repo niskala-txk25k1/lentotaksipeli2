@@ -73,6 +73,13 @@ class Api {
 
 		return results;
 	}
+	async get_passengers(game_id) {
+
+		const response = await fetch(`/api/game/${game_id}/passengers`);
+		const results = await response.json();
+
+		return results;
+	}
 
 
 	async get_current_aircraft(game_id) {
@@ -118,6 +125,11 @@ class Api {
 	async delete_game(game_id) {
 		await fetch(`/api/game/${game_id}/delete`);
 		return;
+	}
+
+	async try_contracts(game_id) {
+		const response = await fetch(`/api/game/${game_id}/try_contracts`);
+		return response.json();
 	}
 }
 
