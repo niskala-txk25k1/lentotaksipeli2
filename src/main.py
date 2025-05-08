@@ -183,10 +183,7 @@ def handle_api_game_delete(game_id):
     mutex.release()
     return {}
 
-@app.route('/api/game/<game_id>')
-def handle_api_game(game_id):
-    mutex.acquire()
-
+def gamestate(game_id):
     cur = db.con.cursor()
 
     query = "SELECT * FROM game WHERE id=%s"
@@ -195,6 +192,14 @@ def handle_api_game(game_id):
     result = serialize_row(cur, row)
 
     cur.close()
+    return result
+
+@app.route('/api/game/<game_id>')
+def handle_api_game(game_id):
+    mutex.acquire()
+    
+    result = gamestate(game_id)
+
     mutex.release()
     return result
 
@@ -247,6 +252,20 @@ def handle_api_set_airport(game_id, icao):
     return "ok"
 
 
+@app.route('/api/game/<game_id>/cheat_money')
+def handle_api_cheat_money(game_id):
+    mutex.acquire()
+    cur = db.con.cursor()
+
+    query = "UPDATE game SET money = money + 100000 WHERE id=?"
+    cur.execute(query, (game_id,))
+
+    cur.close()
+    mutex.release()
+    return {}
+
+
+
 @app.route('/api/game/<game_id>/refuel')
 def handle_api_refuel(game_id):
     mutex.acquire()
@@ -266,7 +285,7 @@ def handle_api_refuel(game_id):
 
     cur.close()
     mutex.release()
-    return "ok"
+    return {}
 
 
 @app.route('/api/game/<game_id>/fly_to/<icao>')
@@ -306,9 +325,78 @@ def handle_api_flyto_airport(game_id, icao):
     query = "UPDATE aircraft SET fuel = fuel - ? WHERE id=?"
     cur.execute(query, (fuel_cost, aircraft["id"]))
 
+    cur.close()
     mutex.release()
     return {"success": True, "message": ""}
 
+
+
+
+@app.route('/api/game/<game_id>/upgrade_comfort')
+def handle_api_upgrade_comfort(game_id):
+    mutex.acquire()
+
+    aircraft = query_current_aircraft(game_id)
+    game = gamestate(game_id)
+
+    cost = 0;
+    match aircraft["category"]:
+        case "Small":
+            cost = 10000
+        case "Medium":
+            cost = 20000
+        case "Largge":
+            cost = 50000
+
+
+    if game["money"] < cost:
+        mutex.release()
+        return {"success": False, "message": "Insufficient funds"}
+
+    cur = db.con.cursor()
+    cur.execute("UPDATE aircraft SET upgrade_comfort = 1, comfort = comfort + 1 WHERE id = ?", (aircraft["id"],))
+    cur.execute("UPDATE game SET money = money - ? WHERE id = ?", (cost, game_id,))
+    cur.close()
+
+    mutex.release()
+    return {"success": True, "message": ""}
+
+
+@app.route('/api/game/<game_id>/upgrade_efficiency')
+def handle_api_upgrade_efficiency(game_id):
+    mutex.acquire()
+
+    aircraft = query_current_aircraft(game_id)
+    game = gamestate(game_id)
+
+    cost = 0;
+    match aircraft["category"]:
+        case "Small":
+            cost = 10000
+        case "Medium":
+            cost = 20000
+        case "Largge":
+            cost = 50000
+
+
+    if game["money"] < cost:
+        mutex.release()
+        return {"success": False, "message": "Insufficient funds"}
+
+    cur = db.con.cursor()
+    cur.execute("""
+        UPDATE aircraft SET
+        upgrade_efficiency = 1,
+        fuel_consumption_lph = fuel_consumption_lph * 0.9,
+        co2_emissions_kgph = co2_emissions_kgph * 0.8
+        WHERE id = ?
+    """, (aircraft["id"],))
+
+    cur.execute("UPDATE game SET money = money - ? WHERE id = ?", (cost, game_id,))
+    cur.close()
+
+    mutex.release()
+    return {"success": True, "message": ""}
 
 
 @app.route('/api/game/<game_id>/try_contracts')
@@ -369,8 +457,6 @@ def handle_api_game_customers(game_id):
 @app.route('/api/game/<game_id>/passengers')
 def handle_api_game_passengers(game_id):
     mutex.acquire()
-
-    update_airport(game_id, game_get_airport(game_id))
 
     cur = db.con.cursor()
 
