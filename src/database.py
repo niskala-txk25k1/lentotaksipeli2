@@ -6,7 +6,7 @@ from geopy.distance import geodesic
 from customer import Customer
 
 # Change this value to cause database to reset
-SCHEMA_VERSION = "lentopeli2_v0.10"
+SCHEMA_VERSION = "lentopeli2_v0.13"
 
 class Database():
     def __init__(self):
@@ -26,6 +26,9 @@ class Database():
                 self.reset()
         except:
             self.reset()
+
+        # reset anyway
+        self.reset()
 
 
 
@@ -97,6 +100,8 @@ class Database():
         """)
 
 
+
+
         cur.execute("DROP TABLE IF EXISTS customer;")
         cur.execute("""
             CREATE TABLE customer (
@@ -124,7 +129,21 @@ class Database():
             ) DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
         """)
 
-        
+
+        cur.execute("DROP TABLE IF EXISTS hangar;")
+        cur.execute("""
+            CREATE TABLE hangar (
+                id             int         NOT NULL AUTO_INCREMENT,
+                game_id        INT         NOT NULL,
+                airport        VARCHAR(40) NOT NULL,
+
+                PRIMARY KEY (id),
+
+                FOREIGN KEY(game_id) REFERENCES game(id),
+                FOREIGN KEY(airport) REFERENCES airport(ident)
+            ) DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
+            ;
+        """)
         self.new_game()
         self.new_game()
 
@@ -140,6 +159,11 @@ class Database():
         """)
 
         game_id = cur.lastrowid
+
+
+        cur.execute("""
+            INSERT INTO hangar (game_id, airport) VALUES (?, ?)
+        """, (game_id, "EFHK"))
 
         cur.execute("""
         INSERT INTO aircraft (game_id, name, category, comfort, capacity, speed_kmh, range_km, fuel, fuel_max, fuel_consumption_lph, co2_emissions_kgph, price, owned, upgrade_comfort, upgrade_efficiency) VALUES
@@ -174,7 +198,7 @@ class Database():
         if len(result) != 1:
             return False
         return True
-    
+
     def current_airport(self):
         cur = self.con.cursor()
         query = "SELECT airport FROM game WHERE id = 1"

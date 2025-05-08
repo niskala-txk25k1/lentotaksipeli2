@@ -83,10 +83,29 @@ class Api {
 		return results;
 	}
 
+	async get_facilities(game_id, icao) {
+
+		const response = await fetch(`/api/game/${game_id}/airport/${icao}/facilities`);
+		const results = await response.json();
+
+		return results;
+	}
+
 
 	async set_airport(game_id, icao) {
+		const response = await fetch(`/api/game/${game_id}/fly_to/${icao}`);
 
-		const response = await fetch(`/api/game/${game_id}/set_airport/${icao}`);
+		if (response.status == 401) {
+			return false;
+		}
+
+		return true;
+	}
+
+
+	async refuel(game_id) {
+
+		const response = await fetch(`/api/game/${game_id}/refuel`);
 		return;
 	}
 }

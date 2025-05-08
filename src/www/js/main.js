@@ -475,11 +475,19 @@ function uncenter_popup() {
 
 
 async function menu_arrived() {
-	await api.set_airport(game_id, map.target.icao);
 	map.origin = map.target;
 	await menu_at_airport()
 
 	show_popup();
+}
+
+
+async function menu_not_enough_fuel() {
+	show_popup();
+	let popup = new Popup();
+	popup.text("Not enough fuel.")
+	popup.button("Return", menu_at_airport)
+	popup.show()
 }
 
 async function menu_confirm_flight(icao) {
@@ -495,11 +503,20 @@ async function menu_confirm_flight(icao) {
 
 	map.disable_interaction();
 
-	popup.button("Confirm", ()=>{
+	popup.button("Confirm", async ()=>{
 		hide_popup();
+
+		let ret = await api.set_airport(game_id, map.target.icao);
+
+		if (ret == false) {
+			await menu_not_enough_fuel()
+			return;
+		}
+
 		const airplane_sprite = new AirplaneSprite();
 		airplane_sprite.show();
 		airplane_sound.start();
+
 		map.animate()
 	});
 	popup.button("Cancel", menu_at_airport)
@@ -523,7 +540,7 @@ async function menu_at_airport() {
 
 	let game = await api.get_game(game_id)
 	let airport = await api.airport_by_icao(game.airport)
-
+	let facilities = await api.get_facilities(game_id, game.airport)
 	update_status(game)
 
 	await map.set_origin(game.airport);
@@ -544,6 +561,15 @@ async function menu_at_airport() {
 
     popup.button("Map", menu_map)
     popup.button("Look for customers", menu_look_for_customers)
+
+    popup.button("Refuel", async ()=>{
+		await api.refuel(game_id)
+		menu_at_airport();
+	})
+
+	if (facilities.hangar) {
+		popup.button("Hangar");
+	}
 
 	center_popup()
 	popup.show()
@@ -566,6 +592,7 @@ async function update_status(game) {
 		money : document.querySelector("#money"),
 		rp : document.querySelector("#rp"),
 		co2 : document.querySelector("#co2"),
+		range : document.querySelector("#range"),
 		aircraft : document.querySelector("#aircraft"),
 		bar : document.querySelector(".progress-bar-fill")
 	}
@@ -575,6 +602,7 @@ async function update_status(game) {
 	dom.rp.innerText = `${game.rp} rp`;
 	dom.co2.innerText = `${game.co2} tCO²`;
 	dom.aircraft.innerText = `${aircraft.name} (${roman[aircraft.comfort-1]})`;
+	dom.range.innerText = `${Math.floor(aircraft.range)} km`;
 }
 
 async function menu_look_for_customers() {

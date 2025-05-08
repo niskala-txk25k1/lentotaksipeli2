@@ -92,6 +92,36 @@ def handle(icao):
     return result
 
 
+@app.route('/api/game/<game_id>/airport/<icao>/facilities')
+def handle_api_facilities(game_id, icao):
+    mutex.acquire()
+
+    cur = db.con.cursor()
+    query = """
+        SELECT hangar.id
+        FROM game, hangar, airport
+
+        WHERE airport.ident = ?
+        AND game.id = ?
+        AND hangar.airport = airport.ident
+        ;
+    """
+    cur.execute(query, (icao,game_id))
+    row = cur.fetchone()
+
+    result = {}
+    result["hangar"] = False
+    result["refuel"] = True
+
+    if row != None:
+        result["hangar"] = True
+
+    print(row)
+
+    cur.close()
+    mutex.release()
+    return result
+
 @app.route('/api/games')
 def handle_api_games():
     mutex.acquire()
@@ -126,32 +156,104 @@ def handle_api_game(game_id):
     mutex.release()
     return result
 
+def update_range(result):
+    result["range_h"] = result["fuel"] / result["fuel_consumption_lph"]
+    result["range"] = result["range_h"] * result["speed_kmh"]
+
 
 @app.route('/api/game/<game_id>/current_aircraft')
 def handle_api_current_aircraft(game_id):
     mutex.acquire()
 
-    cur = db.con.cursor()
+    result = query_current_aircraft(game_id)
 
-    query = "SELECT aircraft.* FROM aircraft INNER JOIN game WHERE game.id=? AND game.aircraft = aircraft.id"
-    cur.execute(query, (game_id,))
-    row = cur.fetchone()
-    result = serialize_row(cur, row)
-
-    cur.close()
     mutex.release()
     return result
 
 
+
+def query_current_aircraft(game_id):
+    cur = db.con.cursor()
+    query = "SELECT aircraft.* FROM aircraft INNER JOIN game WHERE game.id=? AND game.aircraft = aircraft.id"
+    cur.execute(query, (game_id,))
+    row = cur.fetchone()
+    result = serialize_row(cur, row)
+    update_range(result)
+    cur.close()
+    return result
+
+
+def query_current_airport(game_id):
+    cur = db.con.cursor()
+    query = "SELECT airport FROM game WHERE id = ?"
+    cur.execute(query, (game_id,))
+    row = cur.fetchone()
+    cur.close()
+    return row[0]
+
 @app.route('/api/game/<game_id>/set_airport/<icao>')
 def handle_api_set_airport(game_id, icao):
     mutex.acquire()
+    cur = db.con.cursor()
+
+    query = "UPDATE game SET airport = ? WHERE id=?"
+    cur.execute(query, (icao, game_id))
+
+    cur.close()
+    mutex.release()
+    return "ok"
+
+
+@app.route('/api/game/<game_id>/refuel')
+def handle_api_refuel(game_id):
+    mutex.acquire()
+    cur = db.con.cursor()
+
+    query = "UPDATE aircraft, game SET aircraft.fuel = aircraft.fuel_max WHERE game.id = ? AND aircraft.id = game.aircraft"
+    cur.execute(query, (game_id,))
+
+    cur.close()
+    mutex.release()
+    return "ok"
+
+
+@app.route('/api/game/<game_id>/fly_to/<icao>')
+def handle_api_flyto_airport(game_id, icao):
+    mutex.acquire()
+
+    aircraft = query_current_aircraft(game_id)
+    origin = query_current_airport(game_id)
+
+    print(origin)
+    print(icao)
+
+    distance = db.icao_distance(origin, icao)
+
+    # TODO fuel calc
+
+    print(distance)
+
+    flight_hours = distance / aircraft["speed_kmh"]
+
+    print(flight_hours)
+
+    fuel_cost = flight_hours * aircraft["fuel_consumption_lph"]
+
+
+    if aircraft["fuel"] < fuel_cost:
+        mutex.release()
+        return "not ok", 401
+
 
     cur = db.con.cursor()
 
     query = "UPDATE game SET airport = ? WHERE id=?"
     cur.execute(query, (icao, game_id))
-    cur.close()
+
+
+    query = "UPDATE aircraft SET fuel = fuel - ? WHERE id=?"
+    cur.execute(query, (fuel_cost, aircraft["id"]))
+
     mutex.release()
     return "ok"
 
