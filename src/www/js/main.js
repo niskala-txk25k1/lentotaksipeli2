@@ -651,7 +651,7 @@ async function menu_at_airport() {
 		});
 	}
 
-    popup.button("More ...", async ()=>{
+    popup.button("More", async ()=>{
 		let popup = new Popup();
 		popup.button("Delete game", async ()=>{
 			await api.delete_game(game_id)
@@ -662,6 +662,7 @@ async function menu_at_airport() {
 			update_status();
 		})
 		popup.button("Main menu", show_games)
+		popup.button("Return", menu_at_airport)
 		popup.show()
 	});
 
