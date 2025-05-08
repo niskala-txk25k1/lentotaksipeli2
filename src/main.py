@@ -180,6 +180,7 @@ def query_current_aircraft(game_id):
     result = serialize_row(cur, row)
     update_range(result)
     cur.close()
+
     return result
 
 
@@ -209,8 +210,17 @@ def handle_api_refuel(game_id):
     mutex.acquire()
     cur = db.con.cursor()
 
+
+    aircraft = query_current_aircraft(game_id)
+
+    refuel_price = (aircraft["fuel_max"] - aircraft["fuel"]) * 1.1
+
     query = "UPDATE aircraft, game SET aircraft.fuel = aircraft.fuel_max WHERE game.id = ? AND aircraft.id = game.aircraft"
     cur.execute(query, (game_id,))
+
+
+    query = "UPDATE game SET game.money = game.money - ? WHERE game.id = ?;"
+    cur.execute(query, (refuel_price, game_id,))
 
     cur.close()
     mutex.release()

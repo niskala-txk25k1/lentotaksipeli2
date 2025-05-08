@@ -568,7 +568,13 @@ async function menu_at_airport() {
 	})
 
 	if (facilities.hangar) {
-		popup.button("Hangar");
+		popup.button("Hangar", async ()=>{
+			let popup = new Popup();
+			popup.button("Aircraft")
+			popup.button("Upgrade")
+			popup.button("Return", menu_at_airport)
+			popup.show();
+		});
 	}
 
 	center_popup()
@@ -605,6 +611,12 @@ async function update_status(game) {
 	dom.range.innerText = `${Math.floor(aircraft.range)} km`;
 }
 
+
+async function menu_accept_customer(customer_id) {
+	console.log(customer_id)
+	menu_at_airport();
+}
+
 async function menu_look_for_customers() {
 
 	let game = await api.get_game(game_id)
@@ -617,13 +629,15 @@ async function menu_look_for_customers() {
 		const customer = customers[i];
 
 		let t = "";
-		t += `#${i+1} ${customer.name} ${roman[customer.min_comfort]}<br>`
+		t += `#${i+1} ${customer.name} ${roman[customer.min_comfort-1]}<br>`
 		t += `${customer.destination}<br>`
 		t += `\$${customer.reward} +${customer.reward_rp}rp<br>`
 
 		//popup.text(t)
 		//popup.button( `Accept #${i+1}` )
-		popup.button(t)
+		popup.button(t, ()=>{
+			menu_accept_customer(customer.id)
+		})
 
 		map.add_customer(customer, i+1)
 
