@@ -302,18 +302,15 @@ def handle_api_flyto_airport(game_id, icao):
 
     # TODO fuel calc
 
-    print(distance)
 
     flight_hours = distance / aircraft["speed_kmh"]
-
-    print(flight_hours)
-
     fuel_cost = flight_hours * aircraft["fuel_consumption_lph"]
-
+    co2_emissions = flight_hours * aircraft["co2_emissions_kgph"]
 
     if aircraft["fuel"] < fuel_cost:
         mutex.release()
         return {"success": False, "message": "Not enough fuel"}
+
 
 
     cur = db.con.cursor()
@@ -321,9 +318,13 @@ def handle_api_flyto_airport(game_id, icao):
     query = "UPDATE game SET airport = ? WHERE id=?"
     cur.execute(query, (icao, game_id))
 
+    query = "UPDATE game SET co2 = co2 + ?  WHERE id=?"
+    cur.execute(query, (co2_emissions, game_id))
 
     query = "UPDATE aircraft SET fuel = fuel - ? WHERE id=?"
     cur.execute(query, (fuel_cost, aircraft["id"]))
+
+
 
     cur.close()
     mutex.release()

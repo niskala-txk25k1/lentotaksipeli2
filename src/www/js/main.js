@@ -569,7 +569,7 @@ async function menu_upgrades() {
 
 
 	if (aircraft.upgrade_efficiency == 0) {
-		popup.button(`Upgrade efficiency<br>-10 % fuel usage, -20 % CO emissions<br>\$${cost}`, async ()=>{
+		popup.button(`Upgrade efficiency<br>-10 % fuel usage, -20 % CO² emissions<br>\$${cost}`, async ()=>{
 			let ret = await api.upgrade_efficiency(game_id);
 			if (!ret.success) {
 				let popup = new Popup();
@@ -695,7 +695,7 @@ async function update_status(game) {
 	dom.bar.style.width = `${aircraft.fuel/aircraft.fuel_max*100}%`;
 	dom.money.innerText = `\$${game.money}`;
 	dom.rp.innerText = `${game.rp} rp`;
-	dom.co2.innerText = `${game.co2} tCO²`;
+	dom.co2.innerText = `${Math.round(game.co2/1000)} tCO²`;
 	dom.aircraft.innerText = `${aircraft.name} (${roman[aircraft.comfort-1]})`;
 	dom.range.innerText = `${Math.floor(aircraft.range)} km`;
 }
