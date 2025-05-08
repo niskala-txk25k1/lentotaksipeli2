@@ -108,6 +108,16 @@ class Api {
 		const response = await fetch(`/api/game/${game_id}/refuel`);
 		return;
 	}
+
+	async new_game() {
+		await fetch(`/api/game/new`);
+		return;
+	}
+
+	async delete_game(game_id) {
+		await fetch(`/api/game/${game_id}/delete`);
+		return;
+	}
 }
 
 const api = new Api();

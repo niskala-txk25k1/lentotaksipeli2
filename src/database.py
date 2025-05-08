@@ -144,8 +144,6 @@ class Database():
             ) DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci
             ;
         """)
-        self.new_game()
-        self.new_game()
 
         # THIS MUST BE THE LAST LINE OF THIS FUNCTION
         self.metadata_set("schema", SCHEMA_VERSION)

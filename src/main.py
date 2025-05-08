@@ -122,6 +122,7 @@ def handle_api_facilities(game_id, icao):
     mutex.release()
     return result
 
+
 @app.route('/api/games')
 def handle_api_games():
     mutex.acquire()
@@ -140,6 +141,47 @@ def handle_api_games():
     mutex.release()
     return results
 
+@app.route('/api/game/new')
+def handle_api_game_new():
+    mutex.acquire()
+
+    db.new_game()
+
+    mutex.release()
+    return {}
+
+
+@app.route('/api/reset')
+def handle_api_reset():
+    mutex.acquire()
+
+    db.reset()
+
+    mutex.release()
+    return {}
+
+@app.route('/api/game/<game_id>/delete')
+def handle_api_game_delete(game_id):
+    mutex.acquire()
+
+    cur = db.con.cursor()
+
+    cur.execute("SET FOREIGN_KEY_CHECKS=0;")
+
+    query = "DELETE FROM hangar WHERE game_id = ?"
+    cur.execute(query, (game_id,))
+
+    query = "DELETE FROM aircraft WHERE game_id = ?"
+    cur.execute(query, (game_id,))
+
+    query = "DELETE FROM game WHERE id = ?"
+    cur.execute(query, (game_id,))
+    cur.execute("SET FOREIGN_KEY_CHECKS=1;")
+
+    cur.close()
+
+    mutex.release()
+    return {}
 
 @app.route('/api/game/<game_id>')
 def handle_api_game(game_id):

@@ -562,6 +562,7 @@ async function menu_at_airport() {
     popup.button("Map", menu_map)
     popup.button("Look for customers", menu_look_for_customers)
 
+
     popup.button("Refuel", async ()=>{
 		await api.refuel(game_id)
 		menu_at_airport();
@@ -576,6 +577,16 @@ async function menu_at_airport() {
 			popup.show();
 		});
 	}
+
+    popup.button("More ...", async ()=>{
+		let popup = new Popup();
+		popup.button("Delete game", async ()=>{
+			await api.delete_game(game_id)
+			show_games();
+		})
+		popup.button("Main menu", show_games)
+		popup.show()
+	});
 
 	center_popup()
 	popup.show()
@@ -656,7 +667,8 @@ async function load_game(_game_id) {
 }
 
 async function show_games() {
-
+	hide_popup()
+	show_popup()
     map.disable_interaction();
 
     let popup = new Popup();
@@ -666,7 +678,16 @@ async function show_games() {
         popup.button(`Game ${game.id}`, ()=>{ load_game(game.id) })
     }
 
-    popup.button(`New game`, ()=>{} )
+    popup.button(`New game`, async()=>{
+		await api.new_game()
+		show_games()
+	})
+
+
+	popup.button("Reset database", async()=>{
+		await fetch("/api/reset")
+		show_games()
+	})
 
     popup.show();
 }
