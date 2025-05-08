@@ -28,7 +28,7 @@ function compute_geodesic(gps_a, gps_b) {
 	const a = gps_to_usphere(gps_a);
 	const b = gps_to_usphere(gps_b);
 
-	const steps = 10;
+	const steps = 100;
 
 	for (let i = 0; i <= steps; i++) {
 		const t = i/steps;
@@ -497,7 +497,11 @@ async function menu_not_enough_fuel() {
 async function menu_confirm_flight(icao) {
 
 	const airport_data = await get_airport_by_icao(icao);
-	const airport_description = create_airport_description(airport_data);
+	let airport_description = null;
+	if (airport_data == null) {
+		airport_description = "Airport data not available.";
+	}
+	airport_description = create_airport_description(airport_data);
 
 	show_popup();
 

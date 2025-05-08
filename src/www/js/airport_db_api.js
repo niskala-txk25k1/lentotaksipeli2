@@ -243,6 +243,8 @@ let airport_data_template = {
 }
 
 async function get_airport_by_icao(ICAO) {
+    try
+    {
     console.log("Fetching airport data for ICAO:", ICAO);
     const response = await fetch(`https://airportdb.io/api/v1/airport/${ICAO}?apiToken=${airport_db_api_key}`);
     const data = await response.json();
@@ -277,6 +279,11 @@ async function get_airport_by_icao(ICAO) {
 
 
     return obj;
+}
+    catch (error) {
+        console.error("Error fetching airport data:", error);
+        return null;
+    }
 }
 
 function airport_type_to_readable(type) {
