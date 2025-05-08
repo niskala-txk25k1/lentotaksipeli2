@@ -35,7 +35,33 @@ html, body {
 	z-index: 1000;
 	left: 0px;
 }
-  
+
+
+#status {
+    position: absolute;
+	top:0;
+	right:0;
+	width: 200px;
+    z-index: 1000;
+}
+
+.progress-bar {
+	width: 100%;
+	background-color: #e0e0e0;
+	padding: 3px;
+	box-shadow: inset 0 1px 3px rgba(0, 0, 0, .2);
+}
+
+.progress-bar-fill {
+	display: block;
+	height: 22px;
+	background-color: #659cef;
+	
+	transition: width 500ms ease-in-out;
+}
+
+
+
 #panel {
     position: absolute;
     top: 50%;
