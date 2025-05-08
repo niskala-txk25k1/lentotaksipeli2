@@ -146,7 +146,10 @@ class Map {
 	async animation_tick() {
 		let now = util.time();
 		let delta = now - this.anim_start;
-		let progress = this.anim_speed * delta;
+
+		let new_anim_speed = this.distance / 10.0;
+
+		let progress = new_anim_speed * delta;
 
 
 		const airplane_sprite = new AirplaneSprite();
