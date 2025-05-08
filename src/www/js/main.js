@@ -1,5 +1,7 @@
 "use strict";
 
+const roman = ["I", "II", "III", "IV", "V", "VI"]
+
 function gps_to_usphere(gps_deg) {
 	const gps = [
 		util.radians(gps_deg[1]-90),
@@ -58,7 +60,7 @@ function showQuestion(questionText, options) {
 		const div = document.createElement("div");
 
         const btn = document.createElement("button");
-        btn.textContent = option.text;
+        btn.innerHTML = option.text;
         btn.addEventListener("click", option.callback);
 
 
@@ -97,6 +99,8 @@ class Map {
 		this.animating = false;
 		this.anim_start = 0;
 		this.anim_speed = 700; // km per second
+
+		this.customer_markers = [];
 
 		this.leaflet.on("moveend", this.event_move_end.bind(this));
 
@@ -247,12 +251,38 @@ class Map {
 		});
 	}
 
+	async add_customer(customer, index) {
+		const target = await api.airport_by_icao(customer.destination);
+		const waypoints = compute_geodesic(this.origin.gps, target.gps);
+		const line = new L.Polyline(waypoints, {color:"blue"}).addTo(this.leaflet)
+
+		const marker = L.marker(target.gps, {
+			icon: L.divIcon({
+				className: 'text-labels',
+				html: `#${index} ${customer.destination}`,
+				iconSize: [50, 10],
+			}),
+			zIndexOffset: 1000
+		});
+
+		marker.addTo(this.leaflet);
+
+		this.customer_markers.push(line)
+		this.customer_markers.push(marker)
+	}
+
+	async clear_customers() {
+		for (let line of this.customer_markers) {
+			this.leaflet.removeLayer(line)
+		}
+		this.customer_markers = []
+	}
+
 	async geodesic() {
 		if (!this.origin) {
 			await this.set_origin("EFHK");
 			this.target = await api.airport_by_icao("KLGA");
 		}
-
 
 		this.waypoints = compute_geodesic(this.origin.gps, this.target.gps);
 
@@ -261,10 +291,7 @@ class Map {
 		}
 
 		this.line = new L.Polyline(this.waypoints, {color:"red"}).addTo(this.leaflet)
-
 		this.leaflet.fitBounds( this.line.getBounds(), {padding:[50,50]} );
-
-
 		this.distance = util.gps_distance(this.origin.gps, this.target.gps)
 
 	}
@@ -435,6 +462,17 @@ function show_popup() {
 	panel.style.display = "block";
 }
 
+function center_popup() {
+	const panel = document.querySelector("#panel");
+	panel.style.transform = "translate(-50%, -50%)"
+	panel.style.left = "50%"
+}
+function uncenter_popup() {
+	const panel = document.querySelector("#panel");
+	panel.style.transform = "translate(0%, -50%)"
+	panel.style.left = "0%"
+}
+
 
 async function menu_arrived() {
 	await api.set_airport(game_id, map.target.icao);
@@ -490,6 +528,8 @@ async function menu_at_airport() {
 
 	map.clear_geodesic()
 	map.disable_airports();
+	map.disable_interaction()
+	map.clear_customers()
 
 	console.log(game)
 
@@ -503,6 +543,7 @@ async function menu_at_airport() {
     popup.button("Map", menu_map)
     popup.button("Look for customers", menu_look_for_customers)
 
+	center_popup()
 	popup.show()
 
 
@@ -510,13 +551,31 @@ async function menu_at_airport() {
 }
 
 async function menu_look_for_customers() {
+
 	let game = await api.get_game(game_id)
 
 	let popup = new Popup();
 
 	let customers = await api.get_customers( game_id )
 
-	popup.text( JSON.stringify(customers) )
+	for (let i = 0; i < customers.length; i++) {
+		const customer = customers[i];
+
+		let t = "";
+		t += `#${i+1} ${customer.name} ${roman[customer.min_comfort]}<br>`
+		t += `${customer.destination}<br>`
+		t += `\$${customer.reward} +${customer.reward_rp}rp<br>`
+
+		//popup.text(t)
+		//popup.button( `Accept #${i+1}` )
+		popup.button(t)
+
+		map.add_customer(customer, i+1)
+
+	}
+
+	map.enable_interaction()
+	uncenter_popup()
     popup.button("Return", menu_at_airport)
 	popup.show()
 }
