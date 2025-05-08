@@ -94,17 +94,18 @@ class Api {
 
 	async set_airport(game_id, icao) {
 		const response = await fetch(`/api/game/${game_id}/fly_to/${icao}`);
+		const result = await response.json();
+		return result;
+	}
 
-		if (response.status == 401) {
-			return false;
-		}
-
-		return true;
+	async accept_customer(game_id, customer_id) {
+		const response = await fetch(`/api/game/${game_id}/customer/${customer_id}/accept`);
+		const result = await response.json();
+		return result;
 	}
 
 
 	async refuel(game_id) {
-
 		const response = await fetch(`/api/game/${game_id}/refuel`);
 		return;
 	}

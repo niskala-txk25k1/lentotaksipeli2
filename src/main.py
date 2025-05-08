@@ -294,7 +294,7 @@ def handle_api_flyto_airport(game_id, icao):
 
     if aircraft["fuel"] < fuel_cost:
         mutex.release()
-        return "not ok", 401
+        return {"success": False, "message": "Not enough fuel"}
 
 
     cur = db.con.cursor()
@@ -307,7 +307,7 @@ def handle_api_flyto_airport(game_id, icao):
     cur.execute(query, (fuel_cost, aircraft["id"]))
 
     mutex.release()
-    return "ok"
+    return {"success": True, "message": ""}
 
 
 @app.route('/api/game/<game_id>/customers')
@@ -327,10 +327,27 @@ def handle_api_game_customers(game_id):
         result = serialize_row(cur, row)
         results.append(result)
 
-
     cur.close()
     mutex.release()
     return results
+
+
+@app.route('/api/game/<game_id>/customer/<customer_id>/accept')
+def handle_api_game_accept_customer(game_id, customer_id):
+    mutex.acquire()
+
+    customer = db.customer_by_id(customer_id)
+
+    aircraft = query_current_aircraft(game_id)
+
+    if aircraft["comfort"] < customer.min_comfort:
+        mutex.release()
+        return {"success": False, "message": "Insufficient comfort grade"}
+
+    customer.accept()
+
+    mutex.release()
+    return {"success": True}
 
 
 @app.route('/api/airport/type/<airport_type>')

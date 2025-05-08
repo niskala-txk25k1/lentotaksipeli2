@@ -483,11 +483,7 @@ async function menu_arrived() {
 
 
 async function menu_not_enough_fuel() {
-	show_popup();
-	let popup = new Popup();
-	popup.text("Not enough fuel.")
-	popup.button("Return", menu_at_airport)
-	popup.show()
+
 }
 
 async function menu_confirm_flight(icao) {
@@ -508,8 +504,12 @@ async function menu_confirm_flight(icao) {
 
 		let ret = await api.set_airport(game_id, map.target.icao);
 
-		if (ret == false) {
-			await menu_not_enough_fuel()
+		if (ret.success == false) {
+			show_popup();
+			let popup = new Popup();
+			popup.text(ret.message)
+			popup.button("Return", menu_at_airport)
+			popup.show()
 			return;
 		}
 
@@ -625,6 +625,18 @@ async function update_status(game) {
 
 async function menu_accept_customer(customer_id) {
 	console.log(customer_id)
+
+	let ret = await api.accept_customer(game_id, customer_id);
+
+	if (!ret.success) {
+		let popup = new Popup();
+		center_popup();
+		popup.text(ret.message)
+		popup.button("Return", menu_look_for_customers)
+		popup.show()
+		return
+	}
+
 	menu_at_airport();
 }
 
@@ -635,6 +647,13 @@ async function menu_look_for_customers() {
 	let popup = new Popup();
 
 	let customers = await api.get_customers( game_id )
+
+	if (customers.length == 0) {
+		popup.text("There are no customers on this airport.")
+		popup.button("Return", menu_at_airport);
+		popup.show();
+		return;
+	}
 
 	for (let i = 0; i < customers.length; i++) {
 		const customer = customers[i];

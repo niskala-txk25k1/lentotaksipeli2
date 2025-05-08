@@ -349,6 +349,15 @@ class Database():
 
         return customers
 
+
+    def customer_by_id(self, customer_id):
+        cur = self.con.cursor()
+
+        c = Customer(self)
+        c.load(customer_id)
+
+        return c
+
     def accepted_customers(self):
         cur = self.con.cursor()
         query = f"SELECT id FROM customer WHERE accepted = 1"
