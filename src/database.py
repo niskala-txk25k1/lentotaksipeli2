@@ -6,7 +6,7 @@ from geopy.distance import geodesic
 from customer import Customer
 
 # Change this value to cause database to reset
-SCHEMA_VERSION = "lentopeli2_v0.4"
+SCHEMA_VERSION = "lentopeli2_v0.10"
 
 class Database():
     def __init__(self):
@@ -34,6 +34,9 @@ class Database():
         print("Resetting database")
         cur = self.con.cursor()
 
+        cur.execute("SET FOREIGN_KEY_CHECKS=0;")
+
+
         # Clean lp.sql example tables
         cur.execute("DROP TABLE IF EXISTS goal_reached;")
         cur.execute("DROP TABLE IF EXISTS goal;")
@@ -53,7 +56,8 @@ class Database():
         cur.execute("DROP TABLE IF EXISTS aircraft;")
         cur.execute("""
         CREATE TABLE aircraft (
-            id INT PRIMARY KEY,
+            id             int     NOT NULL AUTO_INCREMENT,
+            game_id INT,
             name VARCHAR(50),
             category VARCHAR(10),
             comfort INT,
@@ -67,22 +71,13 @@ class Database():
             fuel_consumption_lph INT,
             co2_emissions_kgph INT,
             price INT,
-            owned INT DEFAULT 0
+            owned INT DEFAULT 0,
+
+            PRIMARY KEY (id),
+            FOREIGN KEY(game_id) REFERENCES game(id)
         );""")
 
-        cur.execute("""
-        INSERT INTO aircraft (id, name, category, comfort, capacity, speed_kmh, range_km, fuel, fuel_max, fuel_consumption_lph, co2_emissions_kgph, price, owned, upgrade_comfort, upgrade_efficiency) VALUES
-        (1, 'Cessna 208 Caravan', 'Small', 1,  9,   340, 1700,  1300,   1300,   220,   560,     0,   1, 0, 0),
-        (2, 'Learjet 75',         'Medium',3,  12,  860, 3700,  6000,   6000,   700,   1900,   0,   0, 0, 0),
-        (3, 'Boeing 747-8',       'Large', 5,  400, 920, 14000, 240000, 240000, 12000, 30000, 0, 0, 0, 0)
-        """)
 
-        # Set prices of airplanes explicitly
-        cur.execute("UPDATE aircraft SET price =   20000 WHERE id = 2")
-        cur.execute("UPDATE aircraft SET price = 1000000 WHERE id = 3")
-
-        # (5, 'Boeing 747-8 VIP',   'Large',  50,  920, 14000, 240000, 240000, 12000, 30000, 250000000, 0, 0);
-        #(2, 'DHC-6 Twin Otter',   'Medium', 19,  330, 1500,  2000,   2000,   400,   1000,    5000000,   0),
 
         cur.execute("DROP TABLE IF EXISTS game;")
         cur.execute("""
@@ -93,7 +88,7 @@ class Database():
                 rp             INT     NOT NULL,
                 co2            FLOAT   NOT NULL,
 
-                aircraft       INT     NOT NULL,
+                aircraft       INT     ,
 
                 PRIMARY KEY (id),
 
@@ -129,20 +124,37 @@ class Database():
             ) DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
         """)
 
-        cur.execute("""
-            INSERT INTO game (id, airport, money,   rp, co2, aircraft) VALUES
-                             (1,  "EFHK",  500,    0,  0,   1)
-        """)
-        cur.execute("""
-            INSERT INTO game (id, airport, money,   rp, co2, aircraft) VALUES
-                             (2,  "EFHK",  500,    0,  0,   1)
-        """)
-
-
+        
+        self.new_game()
+        self.new_game()
 
         # THIS MUST BE THE LAST LINE OF THIS FUNCTION
         self.metadata_set("schema", SCHEMA_VERSION)
+        cur.execute("SET FOREIGN_KEY_CHECKS=1;")
 
+    def new_game(self):
+        cur = self.con.cursor()
+        cur.execute("""
+            INSERT INTO game (airport, money,   rp, co2) VALUES
+                             ("EFHK",  500,    0,  0)
+        """)
+
+        game_id = cur.lastrowid
+
+        cur.execute("""
+        INSERT INTO aircraft (game_id, name, category, comfort, capacity, speed_kmh, range_km, fuel, fuel_max, fuel_consumption_lph, co2_emissions_kgph, price, owned, upgrade_comfort, upgrade_efficiency) VALUES
+        (?, 'Cessna 208 Caravan', 'Small', 1,  9,   340, 1700,  1300,   1300,   220,   20000,     0,   1, 0, 0),
+        (?, 'Learjet 75',         'Medium',3,  12,  860, 3700,  6000,   6000,   700,   20000,   0,   0, 0, 0),
+        (?, 'Boeing 747-8',       'Large', 5,  400, 920, 14000, 240000, 240000, 12000, 1000000, 0, 0, 0, 0)
+        """, (game_id,game_id,game_id))
+
+        cur.execute("SELECT aircraft.id FROM aircraft WHERE game_id=? AND owned=1 LIMIT 1", (game_id,))
+        aircraft_id = cur.fetchone()[0]
+
+        cur.execute("UPDATE game SET aircraft = ? WHERE id = ?", (aircraft_id, game_id))
+
+        # (5, 'Boeing 747-8 VIP',   'Large',  50,  920, 14000, 240000, 240000, 12000, 30000, 250000000, 0, 0);
+        #(2, 'DHC-6 Twin Otter',   'Medium', 19,  330, 1500,  2000,   2000,   400,   1000,    5000000,   0),
 
     def metadata_get(self, key):
         cur = self.con.cursor()

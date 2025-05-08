@@ -75,6 +75,15 @@ class Api {
 	}
 
 
+	async get_current_aircraft(game_id) {
+
+		const response = await fetch(`/api/game/${game_id}/current_aircraft`);
+		const results = await response.json();
+
+		return results;
+	}
+
+
 	async set_airport(game_id, icao) {
 
 		const response = await fetch(`/api/game/${game_id}/set_airport/${icao}`);

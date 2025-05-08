@@ -524,6 +524,8 @@ async function menu_at_airport() {
 	let game = await api.get_game(game_id)
 	let airport = await api.airport_by_icao(game.airport)
 
+	update_status(game)
+
 	await map.set_origin(game.airport);
 
 	map.clear_geodesic()
@@ -548,6 +550,31 @@ async function menu_at_airport() {
 
 
 	map.leaflet.setView(airport.gps);
+}
+
+async function update_status(game) {
+
+	if (!game) {
+		game = await api.get_game(game_id)
+	}
+
+	let aircraft = await api.get_current_aircraft(game_id);
+
+	console.log(aircraft)
+
+	const dom = {
+		money : document.querySelector("#money"),
+		rp : document.querySelector("#rp"),
+		co2 : document.querySelector("#co2"),
+		aircraft : document.querySelector("#aircraft"),
+		bar : document.querySelector(".progress-bar-fill")
+	}
+
+	dom.bar.style.width = `${aircraft.fuel/aircraft.fuel_max*100}%`;
+	dom.money.innerText = `\$${game.money}`;
+	dom.rp.innerText = `${game.rp} rp`;
+	dom.co2.innerText = `${game.co2} tCO²`;
+	dom.aircraft.innerText = `${aircraft.name} (${roman[aircraft.comfort-1]})`;
 }
 
 async function menu_look_for_customers() {

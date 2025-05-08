@@ -127,6 +127,22 @@ def handle_api_game(game_id):
     return result
 
 
+@app.route('/api/game/<game_id>/current_aircraft')
+def handle_api_current_aircraft(game_id):
+    mutex.acquire()
+
+    cur = db.con.cursor()
+
+    query = "SELECT aircraft.* FROM aircraft INNER JOIN game WHERE game.id=? AND game.aircraft = aircraft.id"
+    cur.execute(query, (game_id,))
+    row = cur.fetchone()
+    result = serialize_row(cur, row)
+
+    cur.close()
+    mutex.release()
+    return result
+
+
 @app.route('/api/game/<game_id>/set_airport/<icao>')
 def handle_api_set_airport(game_id, icao):
     mutex.acquire()
