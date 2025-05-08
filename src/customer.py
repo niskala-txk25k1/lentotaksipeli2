@@ -1,4 +1,5 @@
 import random
+import requests
 
 roman = ["I", "II", "III", "IV", "V", "VI"]
 
@@ -145,24 +146,47 @@ class Customer:
 
 
 
-    def generate_name(continent: str) -> str:
-        
-        person_prefix = random.choice(["Mr.", "Mrs.", "Ms.", "Dr."])
-        person_suffix = random.choice(["Jr.", "Sr."])
 
-        syllables = {
-            "AF": ["ba", "ka", "mo", "ntu", "za", "lo", "ngo", "ma"],
-            "AS": ["shi", "ching", "ji", "wen", "li", "tan", "yu", "chong"],
-            "EU": ["von", "de", "son", "ric", "ten", "dal", "mar"],
-            "NA": ["ken", "win", "ton", "ada", "mex", "ver", "san"],
-            "SA": ["san", "val", "rio", "gue", "bol", "ven", "per"],
-            "OC": ["roo", "tas", "que", "bar", "wool", "bir", "ban"],
-            "AN": ["ice", "ice", "ice", "ice", "ice", "ice", "ice"]
+
+    def generate_name(continent: str) -> str:
+        continent_nat = {
+            "AF": "ZA",
+            "AS": "IN",
+            "EU": "DE",
+            "NA": "US",
+            "SA": "BR",
+            "OC": "AU",
+            "AN": "NO"
         }
-        
-        if continent not in syllables:
-            print("Incorrect argument")
-        
-        name_parts = random.choices(syllables[continent], k=random.randint(2, 4))
-        name = "".join(name_parts).capitalize()
-        return f"{person_prefix} {name} {person_suffix}"
+        try:
+            nat = continent_nat.get(continent, "US")
+            response = requests.get(f"https://randomuser.me/api/?nat={nat}")
+            response.raise_for_status()
+            data = response.json()
+            title = data["results"][0]["name"]["title"]
+            first = data["results"][0]["name"]["first"]
+            last = data["results"][0]["name"]["last"]
+            return f"{title} {first} {last}"
+        except Exception as e:
+            print("Error fetching from randomuser.me, using fallback:", e)
+
+            # fallback to synthetic name if API fails
+            person_prefix = random.choice(["Mr.", "Mrs.", "Ms.", "Dr."])
+            person_suffix = random.choice(["Jr.", "Sr."])
+
+            syllables = {
+                "AF": ["ba", "ka", "mo", "ntu", "za", "lo", "ngo", "ma"],
+                "AS": ["shi", "ching", "ji", "wen", "li", "tan", "yu", "chong"],
+                "EU": ["von", "de", "son", "ric", "ten", "dal", "mar"],
+                "NA": ["ken", "win", "ton", "ada", "mex", "ver", "san"],
+                "SA": ["san", "val", "rio", "gue", "bol", "ven", "per"],
+                "OC": ["roo", "tas", "que", "bar", "wool", "bir", "ban"],
+                "AN": ["ice", "ice", "ice", "ice", "ice", "ice", "ice"]
+            }
+
+            if continent not in syllables:
+                print("Incorrect argument")
+
+            name_parts = random.choices(syllables[continent], k=random.randint(2, 4))
+            name = "".join(name_parts).capitalize()
+            return f"{person_prefix} {name} {person_suffix}"
