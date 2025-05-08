@@ -483,8 +483,15 @@ def handle_api_game_customers(game_id):
 
     cur = db.con.cursor()
 
-    # TODO game id
-    query = f"SELECT customer.* FROM customer INNER JOIN game WHERE origin = game.airport AND game.id = ? AND game.id = customer.game_id AND customer.accepted = 0 ORDER BY reward_rp DESC LIMIT 5"
+    query = """
+        SELECT customer.* FROM customer INNER JOIN game
+        WHERE origin = game.airport
+        AND game.id = ?
+        AND game.id = customer.game_id
+        AND customer.accepted = 0
+        ORDER BY reward_rp DESC LIMIT 5
+    """
+
     cur.execute(query, (game_id,))
 
     results = []

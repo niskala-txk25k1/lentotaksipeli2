@@ -145,9 +145,10 @@ class Database():
             ;
         """)
 
-        # THIS MUST BE THE LAST LINE OF THIS FUNCTION
+        # THESE MUST BE THE LAST LINES OF THIS FUNCTION
         self.metadata_set("schema", SCHEMA_VERSION)
         cur.execute("SET FOREIGN_KEY_CHECKS=1;")
+
 
     def new_game(self):
         cur = self.con.cursor()
@@ -157,7 +158,6 @@ class Database():
         """)
 
         game_id = cur.lastrowid
-
 
         cur.execute("""
             INSERT INTO hangar (game_id, airport) VALUES (?, ?)
@@ -174,9 +174,6 @@ class Database():
         aircraft_id = cur.fetchone()[0]
 
         cur.execute("UPDATE game SET aircraft = ? WHERE id = ?", (aircraft_id, game_id))
-
-        # (5, 'Boeing 747-8 VIP',   'Large',  50,  920, 14000, 240000, 240000, 12000, 30000, 250000000, 0, 0);
-        #(2, 'DHC-6 Twin Otter',   'Medium', 19,  330, 1500,  2000,   2000,   400,   1000,    5000000,   0),
 
     def metadata_get(self, key):
         cur = self.con.cursor()
@@ -231,7 +228,7 @@ class Database():
     def get_airport(self, key):
         cur = self.con.cursor()
         query ="""
-            SELECT 
+            SELECT
                 id,
                 type,
                 name,
