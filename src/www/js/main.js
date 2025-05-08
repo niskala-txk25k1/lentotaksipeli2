@@ -547,6 +547,61 @@ async function menu_map() {
 	map.enable_interaction();
 }
 
+async function menu_upgrades() {
+	let aircraft = await api.get_current_aircraft(game_id);
+	update_status()
+	let popup = new Popup();
+
+
+    let cost = 0
+
+	switch (aircraft.category) {
+	case "Small":
+		cost = 10000
+		break
+	case "Medium":
+		cost = 20000
+		break
+	case "Large":
+		cost = 50000
+		break
+	}
+
+
+	if (aircraft.upgrade_efficiency == 0) {
+		popup.button(`Upgrade efficiency<br>-10 % fuel usage, -20 % CO² emissions<br>\$${cost}`, async ()=>{
+			let ret = await api.upgrade_efficiency(game_id);
+			if (!ret.success) {
+				let popup = new Popup();
+				popup.text(ret.message)
+				popup.button("Return", menu_upgrades)
+				popup.show()
+				return;
+			}
+			menu_upgrades();
+		})
+	}
+	if (aircraft.upgrade_comfort == 0) {
+		popup.button(`Upgrade comfort<br>+1 Comfort<br>\$${cost}`, async ()=>{
+			let ret = await api.upgrade_comfort(game_id);
+			if (!ret.success) {
+				let popup = new Popup();
+				popup.text(ret.message)
+				popup.button("Return", menu_upgrades)
+				popup.show()
+				return;
+			}
+			menu_upgrades();
+		});
+	}
+
+	popup.button("Return", menu_at_airport)
+	popup.show()
+}
+
+async function menu_aircraft() {
+
+}
 
 async function menu_at_airport() {
 
@@ -573,9 +628,6 @@ async function menu_at_airport() {
 		return;
 	}
 
-
-
-
     popup.text(`At airport ${airport.ident} - ${airport.name}` )
     popup.text(`${airport.municipality} (${airport.continent} ${airport.iso_region})` )
 
@@ -592,20 +644,25 @@ async function menu_at_airport() {
 	if (facilities.hangar) {
 		popup.button("Hangar", async ()=>{
 			let popup = new Popup();
-			popup.button("Aircraft")
-			popup.button("Upgrade")
+			popup.button("Upgrades",  menu_upgrades)
+			popup.button("Aircrafts", menu_aircraft)
 			popup.button("Return", menu_at_airport)
 			popup.show();
 		});
 	}
 
-    popup.button("More ...", async ()=>{
+    popup.button("More", async ()=>{
 		let popup = new Popup();
 		popup.button("Delete game", async ()=>{
 			await api.delete_game(game_id)
 			show_games();
 		})
+		popup.button("Money cheat", ()=>{
+			api.cheat_money(game_id);
+			update_status();
+		})
 		popup.button("Main menu", show_games)
+		popup.button("Return", menu_at_airport)
 		popup.show()
 	});
 
@@ -638,7 +695,7 @@ async function update_status(game) {
 	dom.bar.style.width = `${aircraft.fuel/aircraft.fuel_max*100}%`;
 	dom.money.innerText = `\$${game.money}`;
 	dom.rp.innerText = `${game.rp} rp`;
-	dom.co2.innerText = `${game.co2} tCO²`;
+	dom.co2.innerText = `${Math.round(game.co2/1000)} tCO²`;
 	dom.aircraft.innerText = `${aircraft.name} (${roman[aircraft.comfort-1]})`;
 	dom.range.innerText = `${Math.floor(aircraft.range)} km`;
 }

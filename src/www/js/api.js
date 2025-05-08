@@ -117,6 +117,10 @@ class Api {
 		return;
 	}
 
+	async cheat_money(game_id) {
+		await fetch(`/api/game/${game_id}/cheat_money`);
+	}
+
 	async new_game() {
 		await fetch(`/api/game/new`);
 		return;
@@ -129,6 +133,16 @@ class Api {
 
 	async try_contracts(game_id) {
 		const response = await fetch(`/api/game/${game_id}/try_contracts`);
+		return response.json();
+	}
+
+	async upgrade_comfort(game_id) {
+		const response = await fetch(`/api/game/${game_id}/upgrade_comfort`);
+		return response.json();
+	}
+
+	async upgrade_efficiency(game_id) {
+		const response = await fetch(`/api/game/${game_id}/upgrade_efficiency`);
 		return response.json();
 	}
 }
