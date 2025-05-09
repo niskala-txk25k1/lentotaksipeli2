@@ -306,7 +306,6 @@ function create_airport_description(airport_data_template)
     description = `${airport_data_template.name} is a ${airport_type_to_readable(airport_data_template.type)} located in ${airport_data_template.region}, ${iso_name_to_country(airport_data_template.country)}.`
     description += ` It has an elevation of ${airport_data_template.elevation_m.toFixed(2)} meters and is situated on the continent of ${continent_iso_name_to_readable(airport_data_template.continent)}.`
     description += ` The airport has ${airport_data_template.runway_count ? airport_data_template.runway_count : "an unknown number of"} runway${airport_data_template.runway_count > 1 ? "s" : ""}.`
-    description += ` The airport is at an elevation of ${airport_data_template.elevation_m.toFixed(2)} meters.`
     description += ` The airport's ICAO code is ${airport_data_template.icao}.`
     return description;
 }
